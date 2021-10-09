@@ -30,11 +30,11 @@ def login(driver):
     password.send_keys(password_text)
     log_in_button = driver.find_element_by_class_name('from__button--floating')
     log_in_button.click()
-    show_data(driver)
+    start(driver)
 
 
-def show_data(driver):
-    profile = 'https://www.linkedin.com/in/ilyabrotzky/'
+def start(driver):
+    profile = 'https://www.linkedin.com/in/vinithius/'
     driver.get(profile)
     try:
         scroll_down_page(driver)
@@ -43,12 +43,16 @@ def show_data(driver):
         sleep(40)
         driver.get(profile)
         scroll_down_page(driver)
+    open_section(driver)
+    print("\nOK!!!")
+
+
+def open_section(driver):
     get_open_about(driver)
     get_open_experience(driver)
     get_open_certifications(driver)
     get_open_accomplishments(driver)
     get_open_skill(driver)
-    print("\nOK!!!")
 
 
 def get_open_about(driver):
