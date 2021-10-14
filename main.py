@@ -246,7 +246,6 @@ def get_accomplishments(soup):
 
 
 def get_skill(soup):
-    # TODO: Quando vier mais de 99 indicações, mudar para 99 em inteiro
     skill = dict()
     container_skill = soup.find('section', {'class': ['pv-skill-categories-section']})
     if container_skill:
