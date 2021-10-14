@@ -15,7 +15,7 @@ HEADER_CONTENTS = 'pv-entity__summary-info'
 CONTENTS = 'inline-show-more-text'
 # Mensagem
 NAO_EXISTE = "NÃO EXISTE NO PERFIL"
-PROFILE = 'https://www.linkedin.com/in/vinithius/'
+PROFILE = 'https://www.linkedin.com/in/thebestrecruiter2/'
 
 
 def main():
@@ -259,7 +259,13 @@ def get_skill(soup):
                 for li in list_li:
                     titulo = li.find('span', {'class': ['pv-skill-category-entity__name-text']}).text.strip()
                     indications = li.find('span', {'class': ['pv-skill-category-entity__endorsement-count']})
-                    indications = indications.text.strip() if indications else 0
+                    if indications:
+                        if indications.text.strip() == '+ de 99':
+                            indications = 99
+                        else:
+                            indications = int(indications.text.strip())
+                    else:
+                        indications = 0
                     verify = True if li.find('div', {'class': ['pv-skill-entity__verified-icon']}) else False
                     skill = {'titulo': titulo, 'indicações': indications, 'verificação': verify}
                     print("\n## skill ##")
