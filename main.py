@@ -9,13 +9,22 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 # Class
+from database.Database import Database
+from database.dao.PersonDao import PersonDao
+from models.Language import Language
+from models.Certification import Certification
+from models.Experience import Experience
+from models.Person import Person
+from models.Skill import Skill
+
+database = Database()
 SEE_MORE_ITEM = 'inline-show-more-text__button'
 SEE_MORE_ALL_ITEMS = 'pv-profile-section__see-more-inline'
 HEADER_CONTENTS = 'pv-entity__summary-info'
 CONTENTS = 'inline-show-more-text'
 # Mensagem
 NAO_EXISTE = "NÃO EXISTE NO PERFIL"
-PROFILE = 'https://www.linkedin.com/in/thebestrecruiter2/'
+PROFILE = 'https://www.linkedin.com/in/vinithius/'
 
 
 def main():
@@ -48,12 +57,20 @@ def start(driver):
         sleep(40)
         driver.get(PROFILE)
         scroll_down_page(driver)
-    open_section(driver)
-    get_informations(driver)
+    open_sections(driver)
+    person = get_person(driver)
+    save_database(person)
+    # PRINTS
+    print(person)
     print("\nOK!!!")
 
 
-def open_section(driver):
+def save_database(person):
+    database.create_tables_if_not_exists()
+    PersonDao(person, database).insert()
+
+
+def open_sections(driver):
     get_open_about(driver)
     get_open_experience(driver)
     get_open_certifications(driver)
@@ -143,15 +160,19 @@ def print_erro(e, msg="ERRO"):
     print("##################\n")
 
 
-def get_informations(driver):
+def get_person(driver):
     html_page = driver.page_source
     soup = BeautifulSoup(html_page, 'html.parser')
-    name, subtitle, local = get_main_info(soup)
-    about = get_about(soup)
-    experience = get_experience(soup)
+    person = get_main_info(soup)
+    experiences = get_experiences(soup)
     certifications = get_certifications(soup)
-    accomplishments = get_accomplishments(soup)
-    skill = get_skill(soup)
+    languages = get_languages(soup)
+    skills = get_skills(soup)
+    person.experiences = experiences
+    person.certifications = certifications
+    person.languages = languages
+    person.skills = skills
+    return person
 
 
 def get_main_info(soup):
@@ -159,9 +180,8 @@ def get_main_info(soup):
     name = container_main.find('h1', {'class': ['text-heading-xlarge']}).text.strip()
     subtitle = container_main.find('div', {'class': ['text-body-medium']}).text.strip()
     local = container_main.find('span', {'class': ['text-body-small inline t-black--light break-words']}).text.strip()
-    print("\n## INFO ##")
-    print("{}\n{}\n{}".format(name, subtitle, local))
-    return name, subtitle, local
+    about = get_about(soup)
+    return Person(name=name, subtitle=subtitle, local=local, about=about)
 
 
 def get_about(soup):
@@ -173,16 +193,16 @@ def get_about(soup):
     return about
 
 
-def get_experience(soup):
-    experience = list()
+def get_experiences(soup):
+    experiences = list()
     container_experience = soup.find('section', {'class': ['experience-section']})
     if container_experience:
         children = container_experience.findAll('li', {'class': ['pv-entity__position-group-pager']})
         for li in children:
-            experience = get_data_experience(li)
+            experiences.append(get_data_experience(li))
             print("\n## experience ##")
-            print(experience)
-    return experience
+            print(experiences)
+    return experiences
 
 
 def get_data_experience(li):
@@ -196,6 +216,9 @@ def get_data_experience(li):
     for item in tempo:
         item = item.text.strip().split(" ")
         tempo_dict = dict(zip(item[1::2], list(map(int, item[::2]))))
+        if "ano" in tempo_dict:
+            tempo_dict["anos"] = tempo_dict["ano"]
+            del tempo_dict["ano"]
         tempo_list.append(tempo_dict)
 
     cargo_list = list()
@@ -207,11 +230,7 @@ def get_data_experience(li):
     experience_list = list()
     for item in list(itertools.zip_longest(cargo_list, tempo_list, descricao_list)):
         experience_list.append(
-            {
-                "cargo": item[0],
-                "tempo": item[1],
-                "descricao": item[2],
-            }
+            Experience(item[0], item[1], item[2])
         )
 
     return experience_list
@@ -223,15 +242,13 @@ def get_certifications(soup):
     if container_certifications:
         children = container_certifications.findAll('li', {'class': ['pv-certification-entity']})
         for li in children:
-            result = li.find('h3', {'class': ['t-16 t-bold']}).text.strip()
-            certifications.append(result)
-            print("\n## certifications ##")
-            print(result)
+            title = li.find('h3', {'class': ['t-16 t-bold']}).text.strip()
+            certifications.append(Certification(title))
     return certifications
 
 
-def get_accomplishments(soup):
-    accomplishments = list()
+def get_languages(soup):
+    languages = list()
     container_accomplishments = soup.find('div', {'id': ['languages-expandable-content']})
     if container_accomplishments:
         list_accomplishments = container_accomplishments.findAll('li', {'class': ['pv-accomplishment-entity']})
@@ -239,14 +256,12 @@ def get_accomplishments(soup):
             idioma = li.find('h4', {'class': ['pv-accomplishment-entity__title']}).contents[2].strip()
             nivel = li.find('p', {'class': ['pv-accomplishment-entity__proficiency']})
             nivel = nivel.text.strip() if nivel else None
-            accomplishments.append({"idioma": idioma, "nivel": nivel})
-        print("\n## accomplishments ##")
-        print(accomplishments)
-    return accomplishments
+            languages.append(Language(idioma, nivel))
+    return languages
 
 
-def get_skill(soup):
-    skill = dict()
+def get_skills(soup):
+    skills = list()
     container_skill = soup.find('section', {'class': ['pv-skill-categories-section']})
     if container_skill:
         container_top_list_skill = container_skill.findAll('ol', {'class': ['pv-skill-categories-section__top-skills']})
@@ -266,10 +281,8 @@ def get_skill(soup):
                     else:
                         indications = 0
                     verify = True if li.find('div', {'class': ['pv-skill-entity__verified-icon']}) else False
-                    skill = {'titulo': titulo, 'indicações': indications, 'verificação': verify}
-                    print("\n## skill ##")
-                    print(skill)
-    return skill
+                    skills.append(Skill(titulo, indications, verify))
+    return skills
 
 
 if __name__ == '__main__':
