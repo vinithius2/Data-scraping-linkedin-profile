@@ -60,6 +60,7 @@ def start(driver):
     open_sections(driver)
     person = get_person(driver)
     save_database(person)
+
     # PRINTS
     print(person)
     print("\nOK!!!")
@@ -68,6 +69,9 @@ def start(driver):
 def save_database(person):
     database.create_tables_if_not_exists()
     PersonDao(person, database).insert()
+    # Provisorio
+    person_list = PersonDao(person, database).select_all_people()
+    print(person_list)
 
 
 def open_sections(driver):
@@ -230,7 +234,7 @@ def get_data_experience(li):
     experience_list = list()
     for item in list(itertools.zip_longest(cargo_list, tempo_list, descricao_list)):
         experience_list.append(
-            Experience(item[0], item[1], item[2])
+            Experience(item[0], item[1].get("anos"), item[1].get("meses"), item[2])
         )
 
     return experience_list

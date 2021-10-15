@@ -1,8 +1,8 @@
 class Experience:
-    def __init__(self, cargo, tempo, descricao):
+    def __init__(self, cargo, anos, meses, descricao):
         self.cargo = cargo
-        self.anos = tempo.get('anos')
-        self.meses = tempo.get('meses')
+        self.anos = anos
+        self.meses = meses
         self.descricao = descricao
 
     def __str__(self):
