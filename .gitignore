@@ -1,2 +1,4 @@
 .idea/
 database.db
+logs.txt
+*.pyc

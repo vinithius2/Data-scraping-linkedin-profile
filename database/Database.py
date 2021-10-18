@@ -27,8 +27,9 @@ class Database:
         self.cursor_db.execute(query)
 
     def create_table_experience(self):
-        query = """CREATE TABLE IF NOT EXISTS experience (id INTEGER PRIMARY KEY AUTOINCREMENT, cargo TEXT, anos NUMBER,
-        meses NUMBER, descricao TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
+        query = """CREATE TABLE IF NOT EXISTS experience (id INTEGER PRIMARY KEY AUTOINCREMENT, empresa TEXT, 
+        cargo TEXT, anos NUMBER, meses NUMBER, descricao TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES 
+        person(id)) """
         self.cursor_db.execute(query)
 
     def create_table_certification(self):

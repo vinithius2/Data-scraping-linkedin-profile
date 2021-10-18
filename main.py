@@ -6,8 +6,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, JavascriptException
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-
+import datetime
 # Class
 from database.Database import Database
 from database.dao.PersonDao import PersonDao
@@ -24,13 +23,22 @@ HEADER_CONTENTS = 'pv-entity__summary-info'
 CONTENTS = 'inline-show-more-text'
 # Mensagem
 NAO_EXISTE = "NÃO EXISTE NO PERFIL"
-PROFILE_LIST = ['https://www.linkedin.com/in/jhcrema/', 'https://www.linkedin.com/in/vinithius/']
+
+PROFILE_LIST = [
+    'https://www.linkedin.com/in/jhcrema/',
+    'https://www.linkedin.com/in/vinithius/',
+    'https://www.linkedin.com/in/fernandopicoli/',
+    'https://www.linkedin.com/in/mozartajr/',
+    'https://www.linkedin.com/in/emmanuelmacron/',
+    'https://www.linkedin.com/in/amanda-pinheiro-po/',
+    'https://www.linkedin.com/in/prof-alexandre-junior/'
+]
 
 
 def main():
     chrome_options = Options()
     chrome_options.add_experimental_option("detach", True)
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+    driver = webdriver.Chrome(executable_path=r"./chromedriver.exe", options=chrome_options)
     driver.get('https://www.linkedin.com/uas/login')
     driver.maximize_window()
     login(driver)
@@ -61,17 +69,17 @@ def start(driver):
         open_sections(driver)
         person = get_person(driver, url)
         save_database(person)
-        # PRINTS
-        print(person)
-    print("\nOK!!!")
+    print("\nData Scraping FINALIZADO!!!")
 
 
 def save_database(person):
     database.create_tables_if_not_exists()
-    PersonDao(person, database).insert()
-    # Provisorio
-    person_list = PersonDao(person, database).select_people()
-    print(person_list)
+    person_id = PersonDao(person, database).insert()
+    if person_id:
+        print("({}) {} cadastrado: {}".format(person_id, person.name, person.url))
+    # # Provisorio
+    # person_list = PersonDao(person, database).select_people()
+    # print(person_list)
 
 
 def open_sections(driver):
@@ -83,7 +91,6 @@ def open_sections(driver):
 
 
 def get_open_about(driver):
-    print("\n# SOBRE #")
     try:
         about_section = driver.find_element_by_class_name('pv-about-section')
         list_see_more_about = about_section.find_elements_by_class_name(SEE_MORE_ITEM)
@@ -93,7 +100,6 @@ def get_open_about(driver):
 
 
 def get_open_experience(driver):
-    print("\n# EXPERIÊNCIA #")
     try:
         experience_section = driver.find_element_by_id('experience-section')
         list_all_see_more_experience = experience_section.find_elements_by_class_name(SEE_MORE_ALL_ITEMS)
@@ -105,7 +111,6 @@ def get_open_experience(driver):
 
 
 def get_open_certifications(driver):
-    print("\n# CERTIFICAÇÕES #")
     try:
         certifications_section = driver.find_element_by_id('certifications-section')
         list_all_see_more_certifications = certifications_section.find_elements_by_class_name(SEE_MORE_ALL_ITEMS)
@@ -115,7 +120,6 @@ def get_open_certifications(driver):
 
 
 def get_open_accomplishments(driver):
-    print("\n# CONQUISTAS #")
     try:
         accomplishments_section = driver.find_element_by_class_name('pv-accomplishments-section')
         accomplishments_language_section = accomplishments_section.find_element_by_class_name('languages')
@@ -126,7 +130,6 @@ def get_open_accomplishments(driver):
 
 
 def get_open_skill(driver):
-    print("\n# HABILIDADES #")
     try:
         skill_section = driver.find_element_by_class_name('pv-skill-categories-section')
         list_skill_section_see_more = skill_section.find_elements_by_class_name('pv-profile-section__card-action-bar')
@@ -141,9 +144,7 @@ def click_list(driver, items, element, is_except=False):
             if not is_except:
                 driver.execute_script("arguments[0].scrollIntoView(true);", element)
             item.click()
-            print("CLICK...")
         except ElementClickInterceptedException as e:
-            print("CLICK... OPS..")
             print_erro(e)
             if not is_except:
                 driver.execute_script("window.scrollTo(0, {});".format(element.location['y'] - 100))
@@ -159,9 +160,10 @@ def scroll_down_page(driver, speed=8):
 
 
 def print_erro(e, msg="ERRO"):
-    print("###### {} ######".format(msg))
-    print(e)
-    print("##################\n")
+    now = datetime.datetime.now()
+    f = open("logs.txt", "a")
+    f.write("[{}] {}".format(str(now), e))
+    f.close()
 
 
 def get_person(driver, url):
@@ -212,8 +214,6 @@ def get_about(soup):
     container_about = soup.find('section', {'class': ['pv-about-section']})
     about = container_about.find('div', {'class': [CONTENTS]})
     about = about.text.strip() if about else None
-    print("\n## about ##")
-    print(about)
     return about
 
 
@@ -224,8 +224,6 @@ def get_experiences(soup):
         children = container_experience.findAll('li', {'class': ['pv-entity__position-group-pager']})
         for li in children:
             experiences.append(get_data_experience(li))
-            print("\n## experience ##")
-            print(experiences)
     return experiences
 
 
@@ -233,6 +231,8 @@ def get_data_experience(li):
     descricao_list = list()
     empresa_list = list()
     career = li.findAll('li', {'class': ['pv-entity__position-group-role-item']})
+
+    # Descrição
     if career:
         for item in career:
             try:
@@ -243,14 +243,20 @@ def get_data_experience(li):
                 empresa_list.append(None)
                 print_erro(e)
             descricao = item.find('div', {'class': ['pv-entity__description']})
-            descricao_list.append(descricao.text.replace("ver menos", "").strip() if item else None)
+            if descricao:
+                descricao_list.append(descricao.text.replace("ver menos", "").strip() if item else None)
+            else:
+                descricao_list.append(None)
     else:
         empresa = li.find('p', {'class': ['pv-entity__secondary-title']})
+        if empresa.find('span', {'class': ['separator']}):
+            empresa.find('span', {'class': ['separator']}).replaceWith(BeautifulSoup("", "html.parser"))
         descricao = li.findAll('div', {'class': ['pv-entity__description']})
         for item in descricao:
             empresa_list.append(empresa.text.strip())
             descricao_list.append(item.text.replace("ver menos", "").strip() if item else None)
 
+    # Tempo
     tempo_list = list()
     tempo = li.findAll('span', {'class': ['pv-entity__bullet-item-v2']})
     for item in tempo:
@@ -261,12 +267,14 @@ def get_data_experience(li):
             del tempo_dict["ano"]
         tempo_list.append(tempo_dict)
 
+    # Cargo
     cargo_list = list()
     class_css = 't-14 t-black t-bold' if len(tempo_list) > 1 else 't-16 t-black t-bold'
     cargo = li.findAll('h3', {'class': [class_css]})
     for item in cargo:
         cargo_list.append(item.text.replace("Cargo\n", "").strip() if item else None)
 
+    # Experiência
     experience_list = list()
     for item in list(itertools.zip_longest(empresa_list, cargo_list, tempo_list, descricao_list)):
         experience_list.append(

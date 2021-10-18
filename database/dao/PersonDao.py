@@ -1,3 +1,5 @@
+import itertools
+
 from models.Certification import Certification
 from models.Experience import Experience
 from models.Language import Language
@@ -9,33 +11,36 @@ class PersonDao:
     def __init__(self, person, database):
         self.person = person
         self.database = database
+        self.person_id = None
 
     # ------ INSERT ------ #
     def insert(self):
-        self.__insert()
-        # person_list = self.select_people(all_people=False)
-        # exist = self.person_exist(person_list)
-        # if not exist:
-        #     self.__insert()
+        person_list = self.select_people(all_people=False)
+        exist = self.person_exist(person_list)
+        if not exist:
+            self.__insert()
+        else:
+            print("Perfil {} JÁ EXISTE registro: {}".format(self.person.name, self.person.url))
+        return self.person_id
 
     def person_exist(self, person_list):
         exist = False
         for person in person_list:
-            if person == self.person:
+            if person.url == self.person.url:
                 exist = True
         return exist
 
     def __insert(self):
-        person_id = self.__insert_person(self.person)
+        self.person_id = self.__insert_person(self.person)
         for certification in self.person.certifications:
-            self.__insert_certification(certification, person_id)
+            self.__insert_certification(certification, self.person_id)
         for language in self.person.languages:
-            self.__insert_language(language, person_id)
+            self.__insert_language(language, self.person_id)
         for skill in self.person.skills:
-            self.__insert_skill(skill, person_id)
+            self.__insert_skill(skill, self.person_id)
         for experience_list in self.person.experiences:
             for experience in experience_list:
-                self.__insert_experience(experience, person_id)
+                self.__insert_experience(experience, self.person_id)
 
     def __insert_person(self, person):
         query = """INSERT INTO person (name, subtitle, local, about, url, email, phone_number)  
@@ -150,14 +155,17 @@ class PersonDao:
         """
         self.database.cursor_db.execute(query, [person_id])
         rows = self.database.cursor_db.fetchall()
-        for row in rows:
-            experience_list.append(
-                Experience(
-                    empresa=row[1],
-                    cargo=row[2],
-                    anos=row[3],
-                    meses=row[4],
-                    descricao=row[5]
+        for key, group in itertools.groupby(rows, key=lambda r: r[1]):
+            experience_group = list()
+            for row in group:
+                experience_group.append(
+                    Experience(
+                        empresa=row[1],
+                        cargo=row[2],
+                        anos=row[3],
+                        meses=row[4],
+                        descricao=row[5]
+                    )
                 )
-            )
+            experience_list.append(experience_group)
         return experience_list
