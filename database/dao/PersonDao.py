@@ -11,8 +11,21 @@ class PersonDao:
         self.database = database
 
     # ------ INSERT ------ #
-
     def insert(self):
+        self.__insert()
+        # person_list = self.select_people(all_people=False)
+        # exist = self.person_exist(person_list)
+        # if not exist:
+        #     self.__insert()
+
+    def person_exist(self, person_list):
+        exist = False
+        for person in person_list:
+            if person == self.person:
+                exist = True
+        return exist
+
+    def __insert(self):
         person_id = self.__insert_person(self.person)
         for certification in self.person.certifications:
             self.__insert_certification(certification, person_id)
@@ -28,8 +41,7 @@ class PersonDao:
         query = """INSERT INTO person (name, subtitle, local, about, url, email, phone_number)  
         VALUES (?,?,?,?,?,?,?)"""
         self.database.cursor_db.execute(query, [person.name, person.subtitle, person.local, person.about,
-                                                None, None, None])
-        # TODO: Pegar dados de URL, EMAIL e TELEFONE
+                                                person.url, person.email, person.phone_number])
         person_id = self.database.cursor_db.lastrowid
         self.database.connection.commit()
         return person_id
@@ -50,19 +62,31 @@ class PersonDao:
         self.database.connection.commit()
 
     def __insert_experience(self, experience, person_id):
-        query = """INSERT INTO experience (cargo, anos, meses, descricao, person_id)  VALUES (?,?,?,?,?)"""
-        self.database.cursor_db.execute(query, [experience.cargo, experience.anos, experience.meses,
-                                                experience.descricao, person_id])
+        query = """INSERT INTO experience (empresa, cargo, anos, meses, descricao, person_id)  VALUES (?,?,?,?,?,?)"""
+        self.database.cursor_db.execute(query, [
+                experience.empresa,
+                experience.cargo,
+                experience.anos,
+                experience.meses,
+                experience.descricao,
+                person_id
+            ]
+        )
         self.database.connection.commit()
 
     # ------ SELECT ------ #
-
-    def select_all_people(self):
+    def select_people(self, all_people=True):
         person_list = list()
-        query = """
-            SELECT id, name, subtitle, local, about, url, email, phone_number FROM person
-        """
-        self.database.cursor_db.execute(query)
+        if all_people:
+            query = """
+                SELECT id, name, subtitle, local, about, url, email, phone_number FROM person
+            """
+            self.database.cursor_db.execute(query)
+        else:
+            query = """
+                SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE name = ?
+            """
+            self.database.cursor_db.execute(query, [self.person.name])
         rows = self.database.cursor_db.fetchall()
         for row in rows:
             certification_list = self.__select_certification(row[0])
@@ -122,10 +146,18 @@ class PersonDao:
     def __select_experience(self, person_id):
         experience_list = list()
         query = """
-            SELECT id, cargo, anos, meses, descricao, person_id FROM experience WHERE ? = person_id 
+            SELECT id, empresa, cargo, anos, meses, descricao, person_id FROM experience WHERE ? = person_id 
         """
         self.database.cursor_db.execute(query, [person_id])
         rows = self.database.cursor_db.fetchall()
         for row in rows:
-            experience_list.append(Experience(cargo=row[1], anos=row[2], meses=row[3], descricao=row[4]))
+            experience_list.append(
+                Experience(
+                    empresa=row[1],
+                    cargo=row[2],
+                    anos=row[3],
+                    meses=row[4],
+                    descricao=row[5]
+                )
+            )
         return experience_list

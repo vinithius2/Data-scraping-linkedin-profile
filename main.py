@@ -1,6 +1,6 @@
 import itertools
-from time import sleep
 import os
+from time import sleep
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -11,9 +11,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 # Class
 from database.Database import Database
 from database.dao.PersonDao import PersonDao
-from models.Language import Language
 from models.Certification import Certification
 from models.Experience import Experience
+from models.Language import Language
 from models.Person import Person
 from models.Skill import Skill
 
@@ -24,7 +24,7 @@ HEADER_CONTENTS = 'pv-entity__summary-info'
 CONTENTS = 'inline-show-more-text'
 # Mensagem
 NAO_EXISTE = "NÃO EXISTE NO PERFIL"
-PROFILE = 'https://www.linkedin.com/in/vinithius/'
+PROFILE_LIST = ['https://www.linkedin.com/in/jhcrema/', 'https://www.linkedin.com/in/vinithius/']
 
 
 def main():
@@ -49,20 +49,20 @@ def login(driver):
 
 
 def start(driver):
-    driver.get(PROFILE)
-    try:
-        scroll_down_page(driver)
-    except JavascriptException as e:
-        print(e)
-        sleep(40)
-        driver.get(PROFILE)
-        scroll_down_page(driver)
-    open_sections(driver)
-    person = get_person(driver)
-    save_database(person)
-
-    # PRINTS
-    print(person)
+    for url in PROFILE_LIST:
+        driver.get(url)
+        try:
+            scroll_down_page(driver)
+        except JavascriptException as e:
+            print(e)
+            sleep(40)
+            driver.get(url)
+            scroll_down_page(driver)
+        open_sections(driver)
+        person = get_person(driver, url)
+        save_database(person)
+        # PRINTS
+        print(person)
     print("\nOK!!!")
 
 
@@ -70,7 +70,7 @@ def save_database(person):
     database.create_tables_if_not_exists()
     PersonDao(person, database).insert()
     # Provisorio
-    person_list = PersonDao(person, database).select_all_people()
+    person_list = PersonDao(person, database).select_people()
     print(person_list)
 
 
@@ -164,10 +164,10 @@ def print_erro(e, msg="ERRO"):
     print("##################\n")
 
 
-def get_person(driver):
+def get_person(driver, url):
     html_page = driver.page_source
     soup = BeautifulSoup(html_page, 'html.parser')
-    person = get_main_info(soup)
+    person = get_main_info(driver, soup, url)
     experiences = get_experiences(soup)
     certifications = get_certifications(soup)
     languages = get_languages(soup)
@@ -179,13 +179,33 @@ def get_person(driver):
     return person
 
 
-def get_main_info(soup):
+def get_main_info(driver, soup, url):
     container_main = soup.find('section', {'class': ['pv-top-card']})
     name = container_main.find('h1', {'class': ['text-heading-xlarge']}).text.strip()
     subtitle = container_main.find('div', {'class': ['text-body-medium']}).text.strip()
     local = container_main.find('span', {'class': ['text-body-small inline t-black--light break-words']}).text.strip()
     about = get_about(soup)
-    return Person(name=name, subtitle=subtitle, local=local, about=about)
+    phone, email = get_contact(driver, url)
+    return Person(name=name, subtitle=subtitle, local=local, about=about, phone_number=phone, email=email, url=url)
+
+
+def get_contact(driver, url):
+    email = None
+    phone = None
+    driver.execute_script("window.open('{}detail/contact-info/')".format(url))
+    sleep(1)
+    driver.switch_to.window(driver.window_handles[1])
+    html_page = driver.page_source
+    soup_contact = BeautifulSoup(html_page, 'html.parser')
+    sections = soup_contact.findAll('section', {'class': ['pv-contact-info__contact-type']})
+    for item in sections:
+        if "ci-email" in item.attrs.get("class"):
+            email = item.find('a', {'class': ['pv-contact-info__contact-link']}).text.strip()
+        if "ci-phone" in item.attrs.get("class"):
+            phone = item.find('span', {'class': ['t-14 t-black t-normal']}).text.strip()
+    driver.close()
+    driver.switch_to.window(driver.window_handles[0])
+    return phone, email
 
 
 def get_about(soup):
@@ -211,9 +231,25 @@ def get_experiences(soup):
 
 def get_data_experience(li):
     descricao_list = list()
-    descricao = li.findAll('div', {'class': ['pv-entity__description']})
-    for item in descricao:
-        descricao_list.append(item.text.replace("ver menos", "").strip() if item else None)
+    empresa_list = list()
+    career = li.findAll('li', {'class': ['pv-entity__position-group-role-item']})
+    if career:
+        for item in career:
+            try:
+                empresa = li.find('div', {'class': ['pv-entity__company-summary-info']}).findAll(
+                    'span', attrs={'class': None})[0]
+                empresa_list.append(empresa.text.strip())
+            except IndexError as e:
+                empresa_list.append(None)
+                print_erro(e)
+            descricao = item.find('div', {'class': ['pv-entity__description']})
+            descricao_list.append(descricao.text.replace("ver menos", "").strip() if item else None)
+    else:
+        empresa = li.find('p', {'class': ['pv-entity__secondary-title']})
+        descricao = li.findAll('div', {'class': ['pv-entity__description']})
+        for item in descricao:
+            empresa_list.append(empresa.text.strip())
+            descricao_list.append(item.text.replace("ver menos", "").strip() if item else None)
 
     tempo_list = list()
     tempo = li.findAll('span', {'class': ['pv-entity__bullet-item-v2']})
@@ -232,9 +268,9 @@ def get_data_experience(li):
         cargo_list.append(item.text.replace("Cargo\n", "").strip() if item else None)
 
     experience_list = list()
-    for item in list(itertools.zip_longest(cargo_list, tempo_list, descricao_list)):
+    for item in list(itertools.zip_longest(empresa_list, cargo_list, tempo_list, descricao_list)):
         experience_list.append(
-            Experience(item[0], item[1].get("anos"), item[1].get("meses"), item[2])
+            Experience(item[0], item[1], item[2].get("anos"), item[2].get("meses"), item[3])
         )
 
     return experience_list
