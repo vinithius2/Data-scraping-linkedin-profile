@@ -20,6 +20,7 @@ class Database:
         self.create_table_certification()
         self.create_table_language()
         self.create_table_skill()
+        self.create_table_search()
 
     def create_table_person(self):
         query = """CREATE TABLE IF NOT EXISTS person (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, subtitle TEXT, 
@@ -46,3 +47,9 @@ class Database:
         query = """CREATE TABLE IF NOT EXISTS skill (id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT, 
         indications NUMBER, verify INTEGER, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)
+
+    def create_table_search(self):
+        query = """CREATE TABLE IF NOT EXISTS search (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT, 
+        datetime TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
+        self.cursor_db.execute(query)
+
