@@ -8,14 +8,14 @@ from models.Skill import Skill
 
 
 class PersonDao:
-    def __init__(self, person, database):
+    def __init__(self, database, person=None):
         self.person = person
         self.database = database
         self.person_id = None
 
     # ------ INSERT ------ #
     def insert(self):
-        person_list = self.select_people(all_people=False)
+        person_list = self.select_people_by_name()
         exist = self.person_exist(person_list)
         if not exist:
             self.__insert()
@@ -80,19 +80,46 @@ class PersonDao:
         self.database.connection.commit()
 
     # ------ SELECT ------ #
-    def select_people(self, all_people=True):
-        person_list = list()
-        if all_people:
-            query = """
-                SELECT id, name, subtitle, local, about, url, email, phone_number FROM person
-            """
-            self.database.cursor_db.execute(query)
-        else:
-            query = """
-                SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE name = ?
-            """
-            self.database.cursor_db.execute(query, [self.person.name])
+    def select_people(self):
+        query = """
+            SELECT id, name, subtitle, local, about, url, email, phone_number FROM person
+        """
+        self.database.cursor_db.execute(query)
         rows = self.database.cursor_db.fetchall()
+        person_list = self.__get_list_person(rows)
+        return person_list
+
+    def select_people_by_name(self):
+        query = """
+            SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE name = ?
+        """
+        self.database.cursor_db.execute(query, [self.person.name])
+        rows = self.database.cursor_db.fetchall()
+        person_list = self.__get_list_person(rows)
+        return person_list
+
+    def select_people_by_id(self, person_id):
+        query = """
+            SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE id = ?
+        """
+        self.database.cursor_db.execute(query, [person_id])
+        rows = self.database.cursor_db.fetchall()
+        person = None
+        if rows:
+            person = self.__get_list_person(rows)[0]
+        return person
+
+    def select_people_by_list_ids(self, list_ids):
+        query = """
+            SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE id IN {}
+        """
+        self.database.cursor_db.execute(query.format(tuple(list_ids)))
+        rows = self.database.cursor_db.fetchall()
+        person_list = self.__get_list_person(rows)
+        return person_list
+
+    def __get_list_person(self, rows):
+        person_list = list()
         for row in rows:
             certification_list = self.__select_certification(row[0])
             language_list = self.__select_language(row[0])

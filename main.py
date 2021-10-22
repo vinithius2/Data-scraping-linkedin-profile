@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.chrome.options import Options
 
+from ScoreProfile import ScoreProfile
 from ScrapingProfile import ScrapingProfile
 from ScrapingSearch import ScrapingSearch
 from database.Database import Database
@@ -13,8 +14,9 @@ text_option = """
     ########## Please choose your NUMBER option: ##########\n
     (1) Search profiles and save list in database;\n
     (2) Scraping data each profile from database;\n
-    (3) Export profiles for XLS file with predeterminted filter;\n
-    (4) CLOSE this app.
+    (3) Score profiles;\n
+    (4) Export profiles for XLS file with predeterminted filter;\n
+    (5) CLOSE this app.
     * Your option (Only numbers)? 
     """
 
@@ -50,8 +52,10 @@ def choose(driver):
         if option == 2:
             profile(driver)
         if option == 3:
-            export(driver)
+            score(driver)
         if option == 4:
+            export(driver)
+        if option == 5:
             close(driver)
     except ValueError as e:
         print(text_error)
@@ -64,20 +68,26 @@ def close(driver):
     sys.exit()
 
 
+def score(driver):
+    print("\n # Score # \n")
+    ScoreProfile(database).start()
+    choose(driver)
+
+
 def export(driver):
-    print("\n # Export... # \n")
+    print("\n # Export # \n")
     choose(driver)
 
 
 def profile(driver):
-    print("\n # Scraping... # \n")
+    print("\n # Scraping # \n")
     ScrapingProfile(driver, database).start()
     choose(driver)
 
 
 def search(driver):
     url_filter = input(text_url_filter)
-    print("\n # Search... # \n")
+    print("\n # Search # \n")
     try:
         ScrapingSearch(url_filter, database, driver).start()
     except InvalidArgumentException as e:

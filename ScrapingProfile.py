@@ -30,9 +30,9 @@ class ScrapingProfile:
         self.database = database
 
     def start(self):
-        search_list = SearchDao(self.database).select_search()
+        search_list = SearchDao(self.database).select_search_person_id_is_null()
         for search in search_list:
-            self.driver.get(search.url)
+            self.driver.get(search.url_profile)
             try:
                 self.scroll_down_page(self.driver)
             except JavascriptException as e:
@@ -42,14 +42,14 @@ class ScrapingProfile:
                 self.driver.get(search.url)
                 self.scroll_down_page(self.driver)
             self.open_sections(self.driver)
-            person = self.get_person(self.driver, search.url)
+            person = self.get_person(self.driver, search.url_profile)
             self.save_database(person)
         print("\nData Scraping FINISH!!!")
 
     def save_database(self, person):
-        person_id = PersonDao(person, database).insert()
+        person_id = PersonDao(database=database, person=person).insert()
         if person_id:
-            SearchDao(self.database).update_search(person_id, person.url)
+            SearchDao(self.database).update_search_person_id(person_id, person.url)
             print("({}) {} cadastrado: {}".format(person_id, person.name, person.url))
 
     def open_sections(self, driver):
@@ -129,10 +129,10 @@ class ScrapingProfile:
         f.write("[{}] {}".format(str(now), e))
         f.close()
 
-    def get_person(self, driver, url):
+    def get_person(self, driver, url_profile):
         html_page = driver.page_source
         soup = BeautifulSoup(html_page, 'html.parser')
-        person = self.get_main_info(driver, soup, url)
+        person = self.get_main_info(driver, soup, url_profile)
         experiences = self.get_experiences(soup)
         certifications = self.get_certifications(soup)
         languages = self.get_languages(soup)
@@ -143,20 +143,20 @@ class ScrapingProfile:
         person.skills = skills
         return person
 
-    def get_main_info(self, driver, soup, url):
+    def get_main_info(self, driver, soup, url_profile):
         container_main = soup.find('section', {'class': ['pv-top-card']})
         name = container_main.find('h1', {'class': ['text-heading-xlarge']}).text.strip()
         subtitle = container_main.find('div', {'class': ['text-body-medium']}).text.strip()
         local = container_main.find('span',
                                     {'class': ['text-body-small inline t-black--light break-words']}).text.strip()
         about = self.get_about(soup)
-        phone, email = self.get_contact(driver, url)
-        return Person(name=name, subtitle=subtitle, local=local, about=about, phone_number=phone, email=email, url=url)
+        phone, email = self.get_contact(driver, url_profile)
+        return Person(name=name, subtitle=subtitle, local=local, about=about, phone_number=phone, email=email, url=url_profile)
 
-    def get_contact(self, driver, url):
+    def get_contact(self, driver, url_profile):
         email = None
         phone = None
-        driver.execute_script("window.open('{}detail/contact-info/')".format(url))
+        driver.execute_script("window.open('{}detail/contact-info/')".format(url_profile))
         sleep(1)
         driver.switch_to.window(driver.window_handles[1])
         html_page = driver.page_source
@@ -207,19 +207,27 @@ class ScrapingProfile:
                 else:
                     descricao_list.append(None)
         else:
-            empresa = li.find('p', {'class': ['pv-entity__secondary-title']})
-            if empresa.find('span', {'class': ['separator']}):
-                empresa.find('span', {'class': ['separator']}).replaceWith(BeautifulSoup("", "html.parser"))
-            descricao = li.findAll('div', {'class': ['pv-entity__description']})
-            for item in descricao:
-                empresa_list.append(empresa.text.strip())
-                descricao_list.append(item.text.replace("ver menos", "").strip() if item else None)
+            try:
+                empresa = li.find('p', {'class': ['pv-entity__secondary-title']})
+                if empresa.find('span', {'class': ['separator']}):
+                    empresa.find('span', {'class': ['separator']}).replaceWith(BeautifulSoup("", "html.parser"))
+                descricao = li.findAll('div', {'class': ['pv-entity__description']})
+                for item in descricao:
+                    empresa_list.append(empresa.text.strip())
+                    descricao_list.append(item.text.replace("ver menos", "").strip() if item else None)
+            except TypeError as e:
+                self.print_erro(e)
+            except Exception as e:
+                self.print_erro(e)
 
         # Tempo
         tempo_list = list()
         tempo = li.findAll('span', {'class': ['pv-entity__bullet-item-v2']})
         for item in tempo:
-            item = item.text.strip().split(" ")
+            if item.text == "menos de um ano":
+                item = item.text.replace("menos de um ano", "1 ano").split(" ")
+            else:
+                item = item.text.strip().split(" ")
             tempo_dict = dict(zip(item[1::2], list(map(int, item[::2]))))
             if "ano" in tempo_dict:
                 tempo_dict["anos"] = tempo_dict["ano"]
@@ -236,8 +244,10 @@ class ScrapingProfile:
         # Experiência
         experience_list = list()
         for item in list(itertools.zip_longest(empresa_list, cargo_list, tempo_list, descricao_list)):
+            anos = item[2].get("anos") if item[2] else 0
+            meses = item[2].get("meses") if item[2] else 0
             experience_list.append(
-                Experience(item[0], item[1], item[2].get("anos"), item[2].get("meses"), item[3])
+                Experience(item[0], item[1], anos, meses, item[3])
             )
 
         return experience_list

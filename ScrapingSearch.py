@@ -11,13 +11,13 @@ from models.Search import Search
 
 
 class ScrapingSearch:
-    def __init__(self, url, database, driver):
-        self.url = url
+    def __init__(self, url_filter, database, driver):
+        self.url_filter = url_filter
         self.database = database
         self.driver = driver
 
     def start(self):
-        self.driver.get(self.url)
+        self.driver.get(self.url_filter)
         self.search()
         print("\nData Scraping list profiles FINISH!!!")
 
@@ -35,11 +35,14 @@ class ScrapingSearch:
                     profile = item.find('span', {'class': ['entity-result__title-text']})
                     if profile.find('span', {'class': ['visually-hidden']}):
                         profile.find('span', {'class': ['visually-hidden']}).replaceWith(BeautifulSoup("", "html.parser"))
-                    url = profile.find('a', {'class': ['app-aware-link']}).attrs['href']
-                    name = profile.find('span').text.strip()
-                    count = count + 1
-                    print("({}) {} - {}".format(count, name, url))
-                    SearchDao(self.database, Search(url)).insert_search()
+                    url_profile = profile.find('a', {'class': ['app-aware-link']}).attrs['href']
+                    if profile.find('span'):
+                        name = profile.find('span').text.strip()
+                        count = count + 1
+                        print("({}) {} - {}".format(count, name, url_profile))
+                        SearchDao(self.database, Search(self.url_filter, url_profile)).insert_search()
+                    else:
+                        print("{} - {}".format("[NÃO CADASTRADO] Usuário fora da sua rede...", url_profile))
                 self.click_next(disable, count)
             except NoSuchElementException as e:
                 print(e)

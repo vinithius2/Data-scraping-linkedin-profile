@@ -49,7 +49,7 @@ class Database:
         self.cursor_db.execute(query)
 
     def create_table_search(self):
-        query = """CREATE TABLE IF NOT EXISTS search (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT, 
-        datetime TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
+        query = """CREATE TABLE IF NOT EXISTS search (id INTEGER PRIMARY KEY AUTOINCREMENT, url_filter TEXT, 
+        url_profile TEXT, datetime TEXT, person_id INTEGER, score REAL, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)
 
