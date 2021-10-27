@@ -1,13 +1,14 @@
-from time import sleep
+import datetime
 
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 from database.dao.SearchDao import SearchDao
 from models.Search import Search
+from utils.bcolors import bcolors
 
 
 class ScrapingSearch:
@@ -19,7 +20,7 @@ class ScrapingSearch:
     def start(self):
         self.driver.get(self.url_filter)
         self.search()
-        print("\nData Scraping list profiles FINISH!!!")
+        print(f"\n{bcolors.GREEN}Data Scraping list profiles FINISH!!!{bcolors.ENDC}")
 
     def search(self, count=0):
         element = self.wait_element_by_css_class('reusable-search__result-container')
@@ -39,15 +40,15 @@ class ScrapingSearch:
                     if profile.find('span'):
                         name = profile.find('span').text.strip()
                         count = count + 1
-                        print("({}) {} - {}".format(count, name, url_profile))
+                        print(f"({count}) {bcolors.BOLD}{name}{bcolors.ENDC} - {url_profile}")
                         SearchDao(self.database, Search(self.url_filter, url_profile)).insert_search()
                     else:
-                        print("{} - {}".format("[NÃO CADASTRADO] Usuário fora da sua rede...", url_profile))
+                        print(f"{bcolors.RED}{bcolors.BOLD}[NÃO CADASTRADO]{bcolors.ENDC} Usuário fora da sua rede...{bcolors.ENDC} - {url_profile}")
                 self.click_next(disable, count)
             except NoSuchElementException as e:
-                print(e)
+                self.print_erro(e)
             except AttributeError as e:
-                print(e)
+                self.print_erro(e)
 
     def page(self, soup):
         disable = False
@@ -59,7 +60,7 @@ class ScrapingSearch:
                 if 'artdeco-button--disabled' in next_class:
                     disable = True
                 page_number = container_pages.find('li', {'class': ['selected']}).text.strip()
-                print("\n#### PAGE {} ####\n".format(page_number))
+                print(f"\n{bcolors.HEADER}#### PAGE {page_number} ####{bcolors.ENDC}\n")
         return disable
 
     def wait_element_by_css_class(self, css_class, timeout=40):
@@ -78,3 +79,9 @@ class ScrapingSearch:
             current_scroll_position += speed
             driver.execute_script("window.scrollTo(0, {});".format(current_scroll_position))
             new_height = driver.execute_script("return document.body.scrollHeight")
+
+    def print_erro(self, e, msg="ERRO"):
+        now = datetime.datetime.now()
+        f = open("../logs.txt", "a")
+        f.write("[{}] {}".format(str(now), e))
+        f.close()

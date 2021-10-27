@@ -1,10 +1,12 @@
 import itertools
 
 from models.Certification import Certification
+from models.Education import Education
 from models.Experience import Experience
 from models.Language import Language
 from models.Person import Person
 from models.Skill import Skill
+from utils.bcolors import bcolors
 
 
 class PersonDao:
@@ -20,7 +22,7 @@ class PersonDao:
         if not exist:
             self.__insert()
         else:
-            print("Perfil {} JÁ EXISTE registro: {}".format(self.person.name, self.person.url))
+            print(f"{bcolors.WARNING}Perfil {self.person.name} JÁ EXISTE registro: {self.person.url}{bcolors.ENDC}")
         return self.person_id
 
     def person_exist(self, person_list):
@@ -34,6 +36,8 @@ class PersonDao:
         self.person_id = self.__insert_person(self.person)
         for certification in self.person.certifications:
             self.__insert_certification(certification, self.person_id)
+        for education in self.person.education:
+            self.__insert_education(education, self.person_id)
         for language in self.person.languages:
             self.__insert_language(language, self.person_id)
         for skill in self.person.skills:
@@ -54,6 +58,11 @@ class PersonDao:
     def __insert_certification(self, certification, person_id):
         query = """INSERT INTO certification (titulo, person_id)  VALUES (?,?)"""
         self.database.cursor_db.execute(query, [certification.titulo, person_id])
+        self.database.connection.commit()
+
+    def __insert_education(self, education, person_id):
+        query = """INSERT INTO education (college, level, course, person_id)  VALUES (?,?,?,?)"""
+        self.database.cursor_db.execute(query, [education.college, education.level, education.course, person_id])
         self.database.connection.commit()
 
     def __insert_language(self, language, person_id):
@@ -122,6 +131,7 @@ class PersonDao:
         person_list = list()
         for row in rows:
             certification_list = self.__select_certification(row[0])
+            education_list = self.__select_education(row[0])
             language_list = self.__select_language(row[0])
             skill_list = self.__select_skill(row[0])
             experience_list = self.__select_experience(row[0])
@@ -136,10 +146,22 @@ class PersonDao:
                 experiences=experience_list,
                 languages=language_list,
                 skills=skill_list,
-                certifications=certification_list
+                certifications=certification_list,
+                education=education_list
                 )
             )
         return person_list
+
+    def __select_education(self, person_id):
+        education_list = list()
+        query = """
+            SELECT id, college, level, course, person_id FROM education WHERE ? = person_id 
+        """
+        self.database.cursor_db.execute(query, [person_id])
+        rows = self.database.cursor_db.fetchall()
+        for row in rows:
+            education_list.append(Education(college=row[1], level=row[2], course=row[3]))
+        return education_list
 
     def __select_certification(self, person_id):
         certification_list = list()

@@ -18,6 +18,7 @@ class Database:
         self.create_table_person()
         self.create_table_experience()
         self.create_table_certification()
+        self.create_table_education()
         self.create_table_language()
         self.create_table_skill()
         self.create_table_search()
@@ -31,6 +32,11 @@ class Database:
         query = """CREATE TABLE IF NOT EXISTS experience (id INTEGER PRIMARY KEY AUTOINCREMENT, empresa TEXT, 
         cargo TEXT, anos NUMBER, meses NUMBER, descricao TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES 
         person(id)) """
+        self.cursor_db.execute(query)
+
+    def create_table_education(self):
+        query = """CREATE TABLE IF NOT EXISTS education (id INTEGER PRIMARY KEY AUTOINCREMENT, college TEXT, 
+        level TEXT, course TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)
 
     def create_table_certification(self):
@@ -52,4 +58,3 @@ class Database:
         query = """CREATE TABLE IF NOT EXISTS search (id INTEGER PRIMARY KEY AUTOINCREMENT, url_filter TEXT, 
         url_profile TEXT, datetime TEXT, person_id INTEGER, score REAL, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)
-
