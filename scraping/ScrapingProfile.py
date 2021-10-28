@@ -32,7 +32,8 @@ class ScrapingProfile:
         self.database = database
 
     def start(self):
-        search_list = SearchDao(self.database).select_search_person_id_is_null()
+        # search_list = SearchDao(self.database).select_search_person_id_is_null()
+        search_list = SearchDao(self.database).select_search_by_person_id(182)
         for search in search_list:
             self.driver.get(search.url_profile)
             try:
@@ -258,6 +259,9 @@ class ScrapingProfile:
             if "ano" in tempo_dict:
                 tempo_dict["anos"] = tempo_dict["ano"]
                 del tempo_dict["ano"]
+            if "mês" in tempo_dict:
+                tempo_dict["meses"] = tempo_dict["mês"]
+                del tempo_dict["mês"]
             tempo_list.append(tempo_dict)
         return tempo_list
 

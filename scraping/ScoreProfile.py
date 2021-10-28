@@ -1,8 +1,9 @@
 import json
-
+from difflib import SequenceMatcher
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
 from utils.bcolors import bcolors
+from utils.texts import text_option_score, text_error_score
 
 
 class ScoreProfile:
@@ -15,44 +16,43 @@ class ScoreProfile:
         self.max_score_language = 0
         self.max_score_education = 0
         self.max_score_level = 0
+        self.MAX_PERCENT = 80
         self.database = database
         self.TECHNOLOGIES = "technologies"
         self.LANGUAGE = "language"
         self.LEVEL = "level"
         self.EDUCATION = "education"
+        self.MESTRADO = "mestrado"
+        self.DOUTORADO = "doutorado"
+        self.POS_GRADUACAO = "pós graduação"
+        self.POS = "pós"
+        self.ESPECIALIZACAO = "especialização"
+        self.GRADUACAO = "graduação"
+        self.BACHAREL = "bacharel"
+        self.TECNOLOGO = "tecnólogo"
+        self.LEVEL_EDUCATION = "level_education"
         self.SR = "sênior"
         self.PL = "pleno"
         self.JR = "júnior"
-        self.text_error = f"""\n
-            {bcolors.FAIL}
-            {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
-            {bcolors.UNDERLINE}Error, repeat the procedure!{bcolors.ENDC}
-            {bcolors.HEADER}###########################{bcolors.ENDC}\n
-            {bcolors.ENDC}
-            """
-        self.text_option = f"""
-            {bcolors.HEADER}########## Add comma-separated technologies to punctuation ##########{bcolors.ENDC}\n
-            {bcolors.UNDERLINE}Example:{bcolors.ENDC} python, react, node, typescript, react native\n\n
-            {bcolors.HEADER}###########################{bcolors.ENDC}\n
-            {bcolors.BOLD}{bcolors.CYAN}* Add your technologies: {bcolors.ENDC}{bcolors.ENDC}
-            """
+        self.DEBUG = True
         self.job_characteristics = {
             "technologies": [],
-            "language": {"inglês": ["avançado", "fluente"]},
+            "language": ["inglês"],
             "level": ["sênior", "pleno", "júnior"]
         }
 
     def start(self):
         try:
-            option = input(self.text_option)
+            option = input(text_option_score)
             self.job_characteristics["technologies"] = [opt.strip() for opt in option.split(",")]
             list_result, search_list = self.__list_person()
             result_list = self.__weighted_calculation(list_result, search_list)
-            self.print_result(result_list)
+            if self.DEBUG:
+                self.print_result(result_list)
             self.export(result_list)
             print(f"\n{bcolors.GREEN}Weighted calculation performed!{bcolors.ENDC}")
         except ValueError as e:
-            print(self.text_error)
+            print(text_error_score)
             self.start()
 
     def __list_person(self):
@@ -70,31 +70,30 @@ class ScoreProfile:
         print(json.dumps(self.job_characteristics, indent=4, ensure_ascii=False))
         print(f"{bcolors.HEADER}### RESULT SCORES ####{bcolors.ENDC}\n")
         result = sorted(result_list, key=lambda d: d['scores']['media'], reverse=True)
-        color = None
-        msg = None
         for item in result:
             media = item["scores"]["media"]
-            if media < 25:
-                color = bcolors.RED
-                msg = "It's not good..."
-            elif 25 < media < 50:
-                color = bcolors.ORANGE
-                msg = "Ok..."
-            elif 50 < media < 75:
-                color = bcolors.YELLOW
-                msg = "Good!"
-            elif media > 75:
-                color = bcolors.GREEN
-                msg = "Great!!!"
-            # print(f"{bcolors.HEADER}###########################{bcolors.ENDC}")
-            # print(f"{bcolors.BOLD}Pontos máximo de cada chave:{bcolors.ENDC} {max_score}")
-            # print(f"{bcolors.BOLD}Todos os pontos por perfil:{bcolors.ENDC} {sum_scores}")
-            # print(f"{bcolors.BOLD}Média calculada:{bcolors.ENDC} {round(percent_media, 2)}")
-            # print(f"{bcolors.HEADER}###########################{bcolors.ENDC}")
+            color, msg = self.get_color_media(media)
             media_text = f'{bcolors.BOLD}{color}{item["scores"]["media"]}{bcolors.ENDC}{bcolors.ENDC}'
-            print(f'[{media_text}] {bcolors.UNDERLINE}{bcolors.BOLD}{msg}{bcolors.ENDC}{bcolors.ENDC} - {item["search"].url_profile}')
+            print(f'({item["search"].person_id}) [{media_text}] {bcolors.UNDERLINE}{bcolors.BOLD}{msg}{bcolors.ENDC}{bcolors.ENDC} - {item["search"].url_profile}')
             print(json.dumps(item["scores"], indent=4, ensure_ascii=False))
             print("\n")
+
+    def get_color_media(self, media):
+        color = None
+        msg = None
+        if media < 25:
+            color = bcolors.RED
+            msg = "It's not good..."
+        elif 25 < media < 50:
+            color = bcolors.ORANGE
+            msg = "Ok..."
+        elif 50 < media < 75:
+            color = bcolors.YELLOW
+            msg = "Good!"
+        elif media > 75:
+            color = bcolors.GREEN
+            msg = "Great!!!"
+        return color, msg
 
     def __calculate_time(self, anos, meses):
         anos = anos or 0
@@ -124,9 +123,9 @@ class ScoreProfile:
         |          |    Básico a intermediário | 4   |
         |          |    Básico             |     1   |
         |--------------------------------------------|
-        |Tecnologias * |	0 a 1 ano	    |    4   |
-        |              |    1 a 2 anos	    |    6   |
-        |              |    2 a 3 anos	    |    8   |
+        |Tecnologias * |	0 a 1 ano	    |    3   |
+        |              |    1 a 2 anos	    |    5   |
+        |              |    2 a 3 anos	    |    7   |
         |              |    3 anos +	    |    10  |
         |--------------------------------------------|
         |Skills *	 |    0 a 20 indicações	  |  2   |
@@ -146,13 +145,7 @@ class ScoreProfile:
 
         * Ex:
         ##########################################################################
-        Tecnologias principais: Python, React, Node.js, TypeScript, React Native,
-        Requisitos: Perfis pleno e sênior, inglês avançado/fluente
-        ##########################################################################
-        * Max score:
-        By tem technology: 36
-        By item language: 36
-        By item level experience: 10
+        Tecnologias: Python, React, Node.js, TypeScript, React Native,
         ##########################################################################
         """
         result_list = list()
@@ -161,34 +154,45 @@ class ScoreProfile:
             person = result[0]
             search = result[1]
             score_dict = self.__create_dict_score()
-            # TECHNOLOGIES
-            score_dict = self.__set_time_experiences_descricao(person, score_dict, self.TECHNOLOGIES)
-            score_dict, max_score_01 = self.__set_score_skills(person, score_dict, self.TECHNOLOGIES)
-            score_dict, max_score_02 = self.__set_score_subtitle(person, score_dict, self.TECHNOLOGIES)
-            score_dict, max_score_03 = self.__set_score_about(person, score_dict, self.TECHNOLOGIES)
-            score_dict, max_score_04 = self.__set_score_certifications(person, score_dict, self.TECHNOLOGIES)
-            score_dict[self.TECHNOLOGIES], max_score_05 = self.__set_score_experiences(score_dict[self.TECHNOLOGIES])
-            self.max_score_technologies = sum([max_score_01, max_score_02, max_score_03, max_score_04, max_score_05])
-            # LANGUAGE
-            score_dict, max_score_06 = self.__set_score_languages(person, score_dict, self.LANGUAGE)
-            score_dict, max_score_07 = self.__set_score_subtitle(person, score_dict, self.LANGUAGE)
-            score_dict, max_score_08 = self.__set_score_about(person, score_dict, self.LANGUAGE)
-            score_dict, max_score_09 = self.__set_score_skills(person, score_dict, self.LANGUAGE)
-            score_dict, max_score_10 = self.__set_score_certifications(person, score_dict, self.LANGUAGE)
-            self.max_score_language = sum([max_score_01, max_score_02, max_score_03, max_score_04, max_score_05])
-            # EDUCATION
-            score_dict, max_score_11 = self.__set_score_education(person, score_dict)
-            self.max_score_education = sum([max_score_11])
-            # LEVEL
-            score_dict, max_score_12 = self.set_score_experiences_cargo(person, score_dict)
-            self.max_score_level = sum([max_score_12])
-            # FINISH
+            score_dict = self.__calculation_technologies(person, score_dict)
+            score_dict = self.__calculation_language(person, score_dict)
+            score_dict = self.__calculation_education(person, score_dict)
+            score_dict = self.__calculation_level(person, score_dict)
             result_dict["person"] = person
             result_dict["search"] = search
             result_dict['scores'] = score_dict
             result_dict['scores']["media"] = self.__media(score_dict)
             result_list.append(result_dict)
         return result_list
+
+    def __calculation_technologies(self, person, score_dict):
+        score_dict = self.__set_time_experiences_descricao(person, score_dict, self.TECHNOLOGIES)
+        score_dict, max_score_01 = self.__set_score_skills(person, score_dict, self.TECHNOLOGIES)
+        score_dict, max_score_02 = self.__set_score_subtitle(person, score_dict, self.TECHNOLOGIES)
+        score_dict, max_score_03 = self.__set_score_about(person, score_dict, self.TECHNOLOGIES)
+        score_dict, max_score_04 = self.__set_score_certifications(person, score_dict, self.TECHNOLOGIES)
+        score_dict[self.TECHNOLOGIES], max_score_05 = self.__set_score_experiences(score_dict[self.TECHNOLOGIES])
+        self.max_score_technologies = sum([max_score_01, max_score_02, max_score_03, max_score_04, max_score_05])
+        return score_dict
+
+    def __calculation_language(self, person, score_dict):
+        score_dict, max_score_06 = self.__set_score_languages(person, score_dict, self.LANGUAGE)
+        score_dict, max_score_07 = self.__set_score_subtitle(person, score_dict, self.LANGUAGE)
+        score_dict, max_score_08 = self.__set_score_about(person, score_dict, self.LANGUAGE)
+        score_dict, max_score_09 = self.__set_score_skills(person, score_dict, self.LANGUAGE)
+        score_dict, max_score_10 = self.__set_score_certifications(person, score_dict, self.LANGUAGE)
+        self.max_score_language = sum([max_score_06, max_score_07, max_score_08, max_score_09, max_score_10])
+        return score_dict
+
+    def __calculation_education(self, person, score_dict):
+        score_dict, max_score_11 = self.__set_score_education(person, score_dict)
+        self.max_score_education = sum([max_score_11])
+        return score_dict
+
+    def __calculation_level(self, person, score_dict):
+        score_dict, max_score_12 = self.set_score_experiences_cargo(person, score_dict)
+        self.max_score_level = sum([max_score_12])
+        return score_dict
 
     def __media(self, score_dict):
         """
@@ -203,11 +207,11 @@ class ScoreProfile:
         """
         Soma todos os pontos por perfil
         """
+        max_score = 0
         for key, value in score_dict.items():
-            max_score = 0
-            for key, value in value.items():
-                max_score += value["score"]
-            return max_score
+            for k, v in value.items():
+                max_score += v["score"]
+        return max_score
 
     def __max_score(self, score_dict):
         """
@@ -239,7 +243,8 @@ class ScoreProfile:
         score_dict["level"] = dict()
         for level in list(set(self.job_characteristics["level"])):
             score_dict["level"][level] = {"score": 0}
-        score_dict["education"] = {"score": 0}
+        score_dict["education"] = dict()
+        score_dict["education"][self.LEVEL_EDUCATION] = {"score": 0}
         return score_dict
 
     def __set_score_subtitle(self, person, score_dict, main_key):
@@ -282,15 +287,15 @@ class ScoreProfile:
         max_score = 10
         for experience_list in person.experiences:
             for experience in experience_list:
-                if self.SR in experience.cargo or experience.descricao and self.SR in experience.descricao:
+                if self.SR in experience.cargo.lower() or experience.descricao and self.SR in experience.descricao.lower():
                     if score_dict[self.LEVEL][self.SR]["score"] == 0:
                         score_dict[self.LEVEL][self.SR]["score"] += max_score
                         break
-                elif self.PL in experience.cargo or experience.descricao and self.PL in experience.descricao:
+                elif self.PL in experience.cargo.lower() or experience.descricao and self.PL in experience.descricao.lower():
                     if score_dict[self.LEVEL][self.SR]["score"] == 0:
                         score_dict[self.LEVEL][self.PL]["score"] += 7
                         break
-                elif self.JR in experience.cargo or experience.descricao and self.JR in experience.descricao:
+                elif self.JR in experience.cargo.lower() or experience.descricao and self.JR in experience.descricao.lower():
                     if score_dict[self.LEVEL][self.SR]["score"] == 0:
                         score_dict[self.LEVEL][self.JR]["score"] += 3
                         break
@@ -322,6 +327,7 @@ class ScoreProfile:
             for certification in person.certifications:
                 if key in certification.titulo.lower():
                     score_dict[main_key][key]['score'] += max_score
+                    break
         return score_dict, max_score
 
     def __set_score_skills(self, person, score_dict, main_key):
@@ -334,17 +340,23 @@ class ScoreProfile:
                 if key in skill.titulo.lower():
                     if skill.verify:
                         score_dict[main_key][key]['score'] += max_score
+                        break
                     else:
                         if skill.indications < 20:
                             score_dict[main_key][key]['score'] += 2
+                            break
                         elif 20 < skill.indications < 40:
                             score_dict[main_key][key]['score'] += 4
+                            break
                         elif 40 < skill.indications < 60:
                             score_dict[main_key][key]['score'] += 6
+                            break
                         elif 60 < skill.indications < 80:
                             score_dict[main_key][key]['score'] += 8
+                            break
                         elif 80 < skill.indications < 99:
                             score_dict[main_key][key]['score'] += max_score
+                            break
         return score_dict, max_score
 
     def __set_score_languages(self, person, score_dict, main_key):
@@ -375,19 +387,37 @@ class ScoreProfile:
         """
         max_score = 10
         for education in person.education:
-            if education.level == "mestrado":
-                score_dict[self.EDUCATION]['score'] += max_score
-                break
-            elif education.level == "doutorado":
-                score_dict[self.EDUCATION]['score'] += max_score
-                break
-            elif education.level == "pós graduação" or education.level == "pós":
-                score_dict[self.EDUCATION]['score'] += 8
-                break
-            elif education.level == "graduação" or education.level == "bacharel":
-                score_dict[self.EDUCATION]['score'] += 7
-                break
-            elif education.level == "técnologo":
-                score_dict[self.EDUCATION]['score'] += 5
-                break
+            if education.level:
+                result = {
+                    self.MESTRADO: self.similarity(education.level.lower(), self.MESTRADO),
+                    self.DOUTORADO: self.similarity(education.level.lower(), self.DOUTORADO),
+                    self.POS_GRADUACAO: max(self.similarity(education.level.lower(), self.POS_GRADUACAO), self.similarity(education.level.lower(), self.POS), self.similarity(education.level.lower(), self.ESPECIALIZACAO)),
+                    self.GRADUACAO: max(self.similarity(education.level.lower(), self.GRADUACAO), self.similarity(education.level.lower(), self.BACHAREL)),
+                    self.TECNOLOGO: self.similarity(education.level.lower(), self.TECNOLOGO)
+                }
+                key_max_value = max(result, key=result.get)
+                all_values = result.values()
+                max_value = max(all_values)
+
+                if key_max_value == self.MESTRADO and max_value >= self.MAX_PERCENT:
+                    score_dict[self.EDUCATION][self.LEVEL_EDUCATION]['score'] += max_score
+                    break
+                elif key_max_value == self.DOUTORADO and max_value >= self.MAX_PERCENT:
+                    score_dict[self.EDUCATION][self.LEVEL_EDUCATION]['score'] += max_score
+                    break
+                elif key_max_value == self.POS_GRADUACAO and max_value >= self.MAX_PERCENT:
+                    score_dict[self.EDUCATION][self.LEVEL_EDUCATION]['score'] += 8
+                    break
+                elif key_max_value == self.GRADUACAO and max_value >= self.MAX_PERCENT:
+                    score_dict[self.EDUCATION][self.LEVEL_EDUCATION]['score'] += 7
+                    break
+                elif key_max_value == self.TECNOLOGO and max_value >= self.MAX_PERCENT:
+                    score_dict[self.EDUCATION][self.LEVEL_EDUCATION]['score'] += 5
+                    break
         return score_dict, max_score
+
+    def similarity(self, text_db, text_static):
+        seq = SequenceMatcher(None, text_db, text_static)
+        percent = seq.ratio() * 100
+        return round(percent, 2)
+

@@ -61,3 +61,17 @@ text_error = f"""\n
     """
 
 text_waiting_login = f"{bcolors.BOLD}{bcolors.BLUE}Waiting login...{bcolors.ENDC}{bcolors.ENDC}"
+
+text_error_score = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
+    {bcolors.UNDERLINE}Error, repeat the procedure!{bcolors.ENDC}
+    {bcolors.HEADER}###########################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+text_option_score = f"""
+    {bcolors.HEADER}########## Add comma-separated technologies to punctuation ##########{bcolors.ENDC}\n
+    {bcolors.UNDERLINE}Example:{bcolors.ENDC} python, react, node, typescript, react native\n\n
+    {bcolors.HEADER}###########################{bcolors.ENDC}\n
+    {bcolors.BOLD}{bcolors.CYAN}* Add your technologies: {bcolors.ENDC}{bcolors.ENDC}
+    """
