@@ -1,9 +1,10 @@
+import os
 import sqlite3
 
 
 class Database:
     def __init__(self):
-        self.connection = sqlite3.connect('database.db')
+        self.connection = sqlite3.connect(os.path.join("C:\\scrapingLinkedinProfiles\\database", 'database.db'))
         self.cursor_db = self.connection.cursor()
 
     _instances = {}

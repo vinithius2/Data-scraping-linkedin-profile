@@ -1,6 +1,4 @@
-import datetime
 import json
-from operator import itemgetter
 
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
@@ -25,18 +23,37 @@ class ScoreProfile:
         self.SR = "sênior"
         self.PL = "pleno"
         self.JR = "júnior"
-        # TODO: Deixar o 'job_characteristics' dinâmico.
+        self.text_error = f"""\n
+            {bcolors.FAIL}
+            {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
+            {bcolors.UNDERLINE}Error, repeat the procedure!{bcolors.ENDC}
+            {bcolors.HEADER}###########################{bcolors.ENDC}\n
+            {bcolors.ENDC}
+            """
+        self.text_option = f"""
+            {bcolors.HEADER}########## Add comma-separated technologies to punctuation ##########{bcolors.ENDC}\n
+            {bcolors.UNDERLINE}Example:{bcolors.ENDC} python, react, node, typescript, react native\n\n
+            {bcolors.HEADER}###########################{bcolors.ENDC}\n
+            {bcolors.BOLD}{bcolors.CYAN}* Add your technologies: {bcolors.ENDC}{bcolors.ENDC}
+            """
         self.job_characteristics = {
-            "technologies": ["python", "react", "node", "typescript", "react native"],
+            "technologies": [],
             "language": {"inglês": ["avançado", "fluente"]},
             "level": ["sênior", "pleno", "júnior"]
         }
 
     def start(self):
-        list_result, search_list = self.__list_person()
-        result_list = self.__weighted_calculation(list_result, search_list)
-        self.print_result(result_list)
-        print(f"\n{bcolors.GREEN}Weighted calculation performed!{bcolors.ENDC}")
+        try:
+            option = input(self.text_option)
+            self.job_characteristics["technologies"] = [opt.strip() for opt in option.split(",")]
+            list_result, search_list = self.__list_person()
+            result_list = self.__weighted_calculation(list_result, search_list)
+            self.print_result(result_list)
+            self.export(result_list)
+            print(f"\n{bcolors.GREEN}Weighted calculation performed!{bcolors.ENDC}")
+        except ValueError as e:
+            print(self.text_error)
+            self.start()
 
     def __list_person(self):
         search_list = SearchDao(self.database).select_search_person_id_is_not_null()
@@ -44,6 +61,9 @@ class ScoreProfile:
         for search in search_list:
             list_result.append(PersonDao(database=self.database).select_people_by_id(search.person_id))
         return list_result, search_list
+
+    def export(self, result_list):
+        pass
 
     def print_result(self, result_list):
         print(f"{bcolors.HEADER}### DICT FILTER ####{bcolors.ENDC}\n")

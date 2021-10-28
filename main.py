@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 from selenium import webdriver
 from selenium.common.exceptions import InvalidArgumentException
@@ -9,57 +10,65 @@ from database.Database import Database
 from scraping.ScoreProfile import ScoreProfile
 from scraping.ScrapingProfile import ScrapingProfile
 from scraping.ScrapingSearch import ScrapingSearch
-from utils.bcolors import bcolors
-
-text_option = f"""
-    {bcolors.HEADER}########## Please choose your NUMBER option: ##########{bcolors.ENDC}\n
-    {bcolors.BOLD}{bcolors.BLUE}(1){bcolors.ENDC}{bcolors.ENDC} Search profiles and save list in database;\n
-    {bcolors.BOLD}{bcolors.BLUE}(2){bcolors.ENDC}{bcolors.ENDC} Scraping data each profile from database;\n
-    {bcolors.BOLD}{bcolors.BLUE}(3){bcolors.ENDC}{bcolors.ENDC} Score profiles;\n
-    {bcolors.BOLD}{bcolors.BLUE}(4){bcolors.ENDC}{bcolors.ENDC} Export profiles for XLS file with predeterminted filter;\n
-    {bcolors.BOLD}{bcolors.BLUE}(5){bcolors.ENDC}{bcolors.ENDC} CLOSE this app.\n
-    {bcolors.HEADER}###########################{bcolors.ENDC}\n
-    {bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}
-    """
-
-text_url_filter = f"""
-    {bcolors.UNDERLINE}Example of URL:{bcolors.ENDC} https://www.linkedin.com/search/results/people/?keywords=desenvolvedor&origin=FACETED_SEARCH&position=1&searchId=0e12d907-9848-40fb-8bc4-d0ec3c3c48c0&sid=nO4\n\n
-    {bcolors.BOLD}{bcolors.CYAN}Add URL filter for Linkedin Profiles:{bcolors.ENDC}{bcolors.ENDC}
-    """
-
-text_error = f"""\n
-    {bcolors.FAIL}
-    {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
-    {bcolors.UNDERLINE}Just NUMBERS for your choose!{bcolors.ENDC}
-    {bcolors.BOLD}Ex:{bcolors.ENDC} 1, 2, 3 or 4...
-    {bcolors.HEADER}###########################{bcolors.ENDC}\n
-    {bcolors.ENDC}
-    """
+from utils.texts import *
 
 database = Database()
+SEARCH_PROFILES = 1
+SCRAPING_PROFILES = 2
+SCORE_AND_EXPORT = 3
+ALL_OPTIONS = 4
+CLOSE_APP = 5
 
 
 def main():
+    print(text_logo)
+    create_directory()
     database.create_tables_if_not_exists()
     driver = config()
+    print(text_waiting_login)
     login(driver)
-    print("Waiting...")
     choose(driver)
+
+
+def create_directory():
+    path_parent = "scrapingLinkedinProfiles"
+    path_absolute = Path("/")
+    directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
+    if not os.path.exists(directory_main):
+        os.mkdir(directory_main)
+    create_directory_database(path_absolute, directory_main)
+    create_directory_export(path_absolute, directory_main)
+
+
+def create_directory_database(path_absolute, directory_main):
+    path_parent_database = os.path.join(directory_main, "database")
+    directory_database = os.path.join(path_absolute.parent.absolute(), path_parent_database)
+    if not os.path.exists(directory_database):
+        os.mkdir(directory_database)
+
+
+def create_directory_export(path_absolute, directory_main):
+    path_parent_export = os.path.join(directory_main, "export")
+    directory_export = os.path.join(path_absolute.parent.absolute(), path_parent_export)
+    if not os.path.exists(directory_export):
+        os.mkdir(directory_export)
 
 
 def choose(driver):
     try:
         option = input(text_option)
         option = int(option)
-        if option == 1:
+        if option == SEARCH_PROFILES:
             search(driver)
-        if option == 2:
+        if option == SCRAPING_PROFILES:
             profile(driver)
-        if option == 3:
-            score(driver)
-        if option == 4:
-            export(driver)
-        if option == 5:
+        if option == SCORE_AND_EXPORT:
+            score_and_export(driver)
+        if option == ALL_OPTIONS:
+            search(driver)
+            profile(driver)
+            score_and_export(driver)
+        if option == CLOSE_APP:
             close(driver)
     except ValueError as e:
         print(text_error)
@@ -67,19 +76,14 @@ def choose(driver):
 
 
 def close(driver):
-    print("I'll be back! =]")
+    print(text_closed)
     driver.close()
     sys.exit()
 
 
-def score(driver):
+def score_and_export(driver):
     print("\n # Score # \n")
     ScoreProfile(database).start()
-    choose(driver)
-
-
-def export(driver):
-    print("\n # Export # \n")
     choose(driver)
 
 
