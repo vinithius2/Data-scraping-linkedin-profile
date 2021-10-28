@@ -63,3 +63,21 @@ class SearchDao:
                 )
             )
         return search_list
+
+    def select_search_by_person_id(self, person_id):
+        search_list = list()
+        query = """
+            SELECT id, url_filter, url_profile, score, person_id, datetime FROM search WHERE person_id = ?
+        """
+        self.database.cursor_db.execute(query, [person_id])
+        rows = self.database.cursor_db.fetchall()
+        for row in rows:
+            search_list.append(Search(
+                    url_filter=row[1],
+                    url_profile=row[2],
+                    score=row[3],
+                    person_id=row[4],
+                    datetime=row[5]
+                )
+            )
+        return search_list

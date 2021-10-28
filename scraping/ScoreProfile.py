@@ -1,5 +1,7 @@
-from operator import itemgetter
+import datetime
 import json
+from operator import itemgetter
+
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
 from utils.bcolors import bcolors
@@ -11,13 +13,18 @@ class ScoreProfile:
         self.um_ano = 12
         self.dois_anos = 24
         self.tres_anos = 36
+        self.max_score_technologies = 0
+        self.max_score_language = 0
+        self.max_score_education = 0
+        self.max_score_level = 0
         self.database = database
-        self.ignore_chars = [",", ".", "|", "/", "\\", "(", ")", "[", "]", "{", "}", "-", "_", " "]
-        self.ignore_propositions = [
-            'o', 'duns', 'do', 'aos', 'os', 'dos', 'por', 'pela', 'umas', 'à', 'de', 'das', 'a', 'e', 'uns', 'duma',
-            'uma', 'numa', 'pelas', 'pelo', 'às', 'na', 'num', 'per', 'ao', 'pelos', 'as', 'no', 'dumas', 'em', 'nuns',
-            'um', 'nas', 'dum', 'da', 'numas', 'nos', 'com', 'ou', 'que'
-        ]
+        self.TECHNOLOGIES = "technologies"
+        self.LANGUAGE = "language"
+        self.LEVEL = "level"
+        self.EDUCATION = "education"
+        self.SR = "sênior"
+        self.PL = "pleno"
+        self.JR = "júnior"
         # TODO: Deixar o 'job_characteristics' dinâmico.
         self.job_characteristics = {
             "technologies": ["python", "react", "node", "typescript", "react native"],
@@ -26,126 +33,56 @@ class ScoreProfile:
         }
 
     def start(self):
-        list_result = self.__get_words()
-        score_dict = self.__weighted_calculation(list_result)
-        self.print_result(score_dict)
-        print(f"\n{bcolors.GREEN}Calculo ponderado efetuado!{bcolors.ENDC}")
+        list_result, search_list = self.__list_person()
+        result_list = self.__weighted_calculation(list_result, search_list)
+        self.print_result(result_list)
+        print(f"\n{bcolors.GREEN}Weighted calculation performed!{bcolors.ENDC}")
 
-    def print_result(self, score_dict):
+    def __list_person(self):
+        search_list = SearchDao(self.database).select_search_person_id_is_not_null()
+        list_result = list()
+        for search in search_list:
+            list_result.append(PersonDao(database=self.database).select_people_by_id(search.person_id))
+        return list_result, search_list
+
+    def print_result(self, result_list):
         print(f"{bcolors.HEADER}### DICT FILTER ####{bcolors.ENDC}\n")
         print(json.dumps(self.job_characteristics, indent=4, ensure_ascii=False))
         print(f"{bcolors.HEADER}### RESULT SCORES ####{bcolors.ENDC}\n")
-        result = sorted(score_dict, key=lambda d: d['scores']['media'], reverse=True)
+        result = sorted(result_list, key=lambda d: d['scores']['media'], reverse=True)
         color = None
         msg = None
         for item in result:
             media = item["scores"]["media"]
-            if media < 25: # Ruim
+            if media < 25:
                 color = bcolors.RED
-                msg = "Ruim"
-            elif 25 < media < 50: # Ok
+                msg = "It's not good..."
+            elif 25 < media < 50:
                 color = bcolors.ORANGE
                 msg = "Ok..."
-            elif 50 < media < 75: # Bom
+            elif 50 < media < 75:
                 color = bcolors.YELLOW
-                msg = "Bom!"
-            elif media > 75: # Ótimo
+                msg = "Good!"
+            elif media > 75:
                 color = bcolors.GREEN
-                msg = "Ótimo!!!"
+                msg = "Great!!!"
+            # print(f"{bcolors.HEADER}###########################{bcolors.ENDC}")
+            # print(f"{bcolors.BOLD}Pontos máximo de cada chave:{bcolors.ENDC} {max_score}")
+            # print(f"{bcolors.BOLD}Todos os pontos por perfil:{bcolors.ENDC} {sum_scores}")
+            # print(f"{bcolors.BOLD}Média calculada:{bcolors.ENDC} {round(percent_media, 2)}")
+            # print(f"{bcolors.HEADER}###########################{bcolors.ENDC}")
             media_text = f'{bcolors.BOLD}{color}{item["scores"]["media"]}{bcolors.ENDC}{bcolors.ENDC}'
             print(f'[{media_text}] {bcolors.UNDERLINE}{bcolors.BOLD}{msg}{bcolors.ENDC}{bcolors.ENDC} - {item["search"].url_profile}')
             print(json.dumps(item["scores"], indent=4, ensure_ascii=False))
             print("\n")
 
-    def __bag_of_words(self, text):
-        text_list = list()
-        if text:
-            text_list = text.lower().split()
-            for idx, item in enumerate(text_list):
-                for ignore_char in self.ignore_chars:
-                    text_list[idx] = text_list[idx].replace(ignore_char, "").strip()
-            for idx, item in enumerate(text_list):
-                if text_list[idx] in self.ignore_propositions:
-                    del text_list[idx]
-        return text_list
-
     def __calculate_time(self, anos, meses):
+        anos = anos or 0
+        meses = meses or 0
         result = (anos * 12) + meses
         return result
 
-    def __word_subtitle(self, profile_bag_of_words, profile):
-        profile_bag_of_words["subtitle"] = self.__bag_of_words(profile.subtitle)
-        return profile_bag_of_words
-
-    def __word_about(self, profile_bag_of_words, profile):
-        profile_bag_of_words["about"] = self.__bag_of_words(profile.about)
-        return profile_bag_of_words
-
-    def __word_experiences(self, profile_bag_of_words, profile):
-        profile_bag_of_words["experiences"] = list()
-        for experiences in profile.experiences:
-            exp = {
-                "descricao": list(),
-                "cargo": list(),
-                "tempo": 0.0
-            }
-            anos = 0
-            meses = 0
-            for carrer in experiences:
-                exp["descricao"].extend(self.__bag_of_words(carrer.descricao))
-                exp["cargo"].extend(self.__bag_of_words(carrer.cargo))
-                anos += carrer.anos if carrer.anos else 0
-                meses += carrer.meses if carrer.meses else 0
-            exp["tempo"] = self.__calculate_time(anos, meses)
-            profile_bag_of_words["experiences"].append(exp)
-        return profile_bag_of_words
-
-    def __word_certifications(self, profile_bag_of_words, profile):
-        profile_bag_of_words["certifications"] = list()
-        for certifications in profile.certifications:
-            profile_bag_of_words["certifications"].extend(self.__bag_of_words(certifications.titulo))
-        return profile_bag_of_words
-
-    def __word_education(self, profile_bag_of_words, profile):
-        profile_bag_of_words["education"] = list()
-        for education in profile.education:
-            profile_bag_of_words["education"].extend(self.__bag_of_words(education.level))
-        return profile_bag_of_words
-
-    def __word_skills(self, profile_bag_of_words, profile):
-        profile_bag_of_words["skills"] = list()
-        for skills in profile.skills:
-            profile_bag_of_words["skills"].append(skills.__dict__)
-        profile_bag_of_words["skills"] = sorted(profile_bag_of_words["skills"], key=itemgetter('verify', 'indications'))
-        return profile_bag_of_words
-
-    def __word_languages(self, profile_bag_of_words, profile):
-        profile_bag_of_words["languages"] = list()
-        for languages in profile.languages:
-            profile_bag_of_words["languages"].append(languages.__dict__)
-        return profile_bag_of_words
-
-    def __get_words(self):
-        search_list = SearchDao(self.database).select_search_person_id_is_not_null()
-        list_ids = [search.person_id for search in search_list]
-        list_result = list()
-        for idx, person_id in enumerate(list_ids):
-            profile = PersonDao(database=self.database).select_people_by_id(person_id)
-            if profile:
-                search = search_list[idx]
-                profile_bag_of_words = dict()
-                profile_bag_of_words["search"] = search
-                profile_bag_of_words = self.__word_subtitle(profile_bag_of_words, profile)
-                profile_bag_of_words = self.__word_about(profile_bag_of_words, profile)
-                profile_bag_of_words = self.__word_experiences(profile_bag_of_words, profile)
-                profile_bag_of_words = self.__word_certifications(profile_bag_of_words, profile)
-                profile_bag_of_words = self.__word_education(profile_bag_of_words, profile)
-                profile_bag_of_words = self.__word_skills(profile_bag_of_words, profile)
-                profile_bag_of_words = self.__word_languages(profile_bag_of_words, profile)
-                list_result.append(profile_bag_of_words)
-        return list_result
-
-    def __weighted_calculation(self, list_result):
+    def __weighted_calculation(self, list_result, search_list):
         """
         ############# Cálculo Ponderado ##############
         |--------------------------------------------|
@@ -198,29 +135,40 @@ class ScoreProfile:
         By item level experience: 10
         ##########################################################################
         """
-        for idx, result in enumerate(list_result):
+        result_list = list()
+        for result in zip(list_result, search_list):
+            result_dict = dict()
+            person = result[0]
+            search = result[1]
             score_dict = self.__create_dict_score()
-
-            for key, value in score_dict["technologies"].items():
-                score_dict = self.__set_time_experiences_descricao(result, score_dict, "technologies", key)
-                score_dict = self.__set_score_skills(result, score_dict, "technologies", key)
-                score_dict = self.__set_score_subtitle(result, score_dict, "technologies", key)
-                score_dict = self.__set_score_about(result, score_dict, "technologies", key)
-                score_dict = self.__set_score_certifications(result, score_dict, "technologies", key)
-
-            for key, value in score_dict["language"].items():
-                score_dict = self.__set_score_languages(result, score_dict, "language", key)
-                score_dict = self.__set_score_subtitle(result, score_dict, "language", key)
-                score_dict = self.__set_score_about(result, score_dict, "language", key)
-                score_dict = self.__set_score_skills(result, score_dict, "language", key)
-                score_dict = self.__set_score_certifications(result, score_dict, "language", key)
-
-            score_dict = self.__set_score_education(result, score_dict)
-            score_dict = self.set_score_experiences_cargo(result, score_dict, "level")
-            score_dict["technologies"] = self.__set_score_experiences(score_dict["technologies"])
-            list_result[idx]['scores'] = score_dict
-            list_result[idx]['scores']["media"] = self.__media(score_dict)
-        return list_result
+            # TECHNOLOGIES
+            score_dict = self.__set_time_experiences_descricao(person, score_dict, self.TECHNOLOGIES)
+            score_dict, max_score_01 = self.__set_score_skills(person, score_dict, self.TECHNOLOGIES)
+            score_dict, max_score_02 = self.__set_score_subtitle(person, score_dict, self.TECHNOLOGIES)
+            score_dict, max_score_03 = self.__set_score_about(person, score_dict, self.TECHNOLOGIES)
+            score_dict, max_score_04 = self.__set_score_certifications(person, score_dict, self.TECHNOLOGIES)
+            score_dict[self.TECHNOLOGIES], max_score_05 = self.__set_score_experiences(score_dict[self.TECHNOLOGIES])
+            self.max_score_technologies = sum([max_score_01, max_score_02, max_score_03, max_score_04, max_score_05])
+            # LANGUAGE
+            score_dict, max_score_06 = self.__set_score_languages(person, score_dict, self.LANGUAGE)
+            score_dict, max_score_07 = self.__set_score_subtitle(person, score_dict, self.LANGUAGE)
+            score_dict, max_score_08 = self.__set_score_about(person, score_dict, self.LANGUAGE)
+            score_dict, max_score_09 = self.__set_score_skills(person, score_dict, self.LANGUAGE)
+            score_dict, max_score_10 = self.__set_score_certifications(person, score_dict, self.LANGUAGE)
+            self.max_score_language = sum([max_score_01, max_score_02, max_score_03, max_score_04, max_score_05])
+            # EDUCATION
+            score_dict, max_score_11 = self.__set_score_education(person, score_dict)
+            self.max_score_education = sum([max_score_11])
+            # LEVEL
+            score_dict, max_score_12 = self.set_score_experiences_cargo(person, score_dict)
+            self.max_score_level = sum([max_score_12])
+            # FINISH
+            result_dict["person"] = person
+            result_dict["search"] = search
+            result_dict['scores'] = score_dict
+            result_dict['scores']["media"] = self.__media(score_dict)
+            result_list.append(result_dict)
+        return result_list
 
     def __media(self, score_dict):
         """
@@ -228,13 +176,8 @@ class ScoreProfile:
         """
         max_score = self.__max_score(score_dict)
         sum_scores = self.__sum_all_scores(score_dict)
-        percent_media = (sum_scores / max_score) * 100
-        print(f"{bcolors.HEADER}###########################{bcolors.ENDC}")
-        print(f"{bcolors.BOLD}Pontos máximo de cada chave:{bcolors.ENDC} {max_score}")
-        print(f"{bcolors.BOLD}Todos os pontos por perfil:{bcolors.ENDC} {sum_scores}")
-        print(f"{bcolors.BOLD}Média calculada:{bcolors.ENDC} {round(percent_media, 2)}")
-        print(f"{bcolors.HEADER}###########################{bcolors.ENDC}")
-        return round(percent_media, 2)
+        media = (sum_scores / max_score) * 100
+        return round(media, 2)
 
     def __sum_all_scores(self, score_dict):
         """
@@ -246,18 +189,20 @@ class ScoreProfile:
                 max_score += value["score"]
             return max_score
 
-    def __max_score(self, score_dict, max_technology=32, max_language=32, max_level=10):
+    def __max_score(self, score_dict):
         """
         Soma todos os pontos máximo de cada chave
         """
         result_media_score = 0
         for key, value in score_dict.items():
-            if key == "technologies":
-                result_media_score += len(value) * max_technology
-            elif key == "language":
-                result_media_score += len(value) * max_language
-            elif key == "level":
-                result_media_score += len(value) * max_level
+            if key == self.TECHNOLOGIES:
+                result_media_score += len(value) * self.max_score_technologies
+            elif key == self.LANGUAGE:
+                result_media_score += len(value) * self.max_score_language
+            elif key == self.LEVEL:
+                result_media_score += len(value) * self.max_score_level
+            elif key == self.EDUCATION:
+                result_media_score += len(value) * self.max_score_level
         return result_media_score
 
     def __create_dict_score(self):
@@ -277,58 +222,65 @@ class ScoreProfile:
         score_dict["education"] = {"score": 0}
         return score_dict
 
-    def __set_score_subtitle(self, result, score_dict, main_key, key):
+    def __set_score_subtitle(self, person, score_dict, main_key):
         """
         Adiciona a pontuação do subtitulo baseado nas palavras chaves.
         """
-        if key in result["subtitle"]:
-            score_dict[main_key][key]['score'] += 2
-        return score_dict
+        max_score = 2
+        for key, score in score_dict[main_key].items():
+            if key in person.subtitle.lower():
+                score_dict[main_key][key]['score'] += max_score
+        return score_dict, max_score
 
-    def __set_score_about(self, result, score_dict, main_key, key):
+    def __set_score_about(self, person, score_dict, main_key):
         """
         Adiciona a pontuação ao sobre baseado nas palavras chaves.
         """
-        if key in result["about"]:
-            score_dict[main_key][key]['score'] += 5
-        return score_dict
+        max_score = 5
+        for key, score in score_dict[main_key].items():
+            if person.about and key in person.about.lower():
+                score_dict[main_key][key]['score'] += max_score
+        return score_dict, max_score
 
-    def __set_time_experiences_descricao(self, result, score_dict, main_key, key):
+    def __set_time_experiences_descricao(self, person, score_dict, main_key):
         """
         Faz a soma do tempo percorrendo as experiências para cada tecnologia.
         """
-        for experience in result["experiences"]:
-            if key in experience['descricao'] or key in experience['cargo']:
-                tempo = experience["tempo"]
-                score_dict[main_key][key]['tempo'] += tempo
+        for key, score in score_dict[main_key].items():
+            for experience_list in person.experiences:
+                for experience in experience_list:
+                    if key in experience.cargo.lower() or experience.descricao and key in experience.descricao.lower():
+                        tempo = self.__calculate_time(experience.anos, experience.meses)
+                        score_dict[main_key][key]['tempo'] += tempo
         return score_dict
 
-    def set_score_experiences_cargo(self, result, score_dict, key):
+    def set_score_experiences_cargo(self, person, score_dict):
         """
         Verifica se existe no 'saco de palavras' as palavras 'sênior', 'pleno' e 'júnior', caso exista algum, o loop é
         interrompido, pois só é válido uma única validação buscando a experiência mais recente até a mais antiga.
         """
-        senior = "sênior"
-        pleno = "pleno"
-        junior = "júnior"
-        for experience in result["experiences"]:
-            cargo = experience["cargo"]
-            descricao = experience["descricao"]
-            if senior in cargo or senior in descricao:
-                score_dict[key][senior]["score"] += 10
-                break
-            elif pleno in cargo or pleno in descricao:
-                score_dict[key][pleno]["score"] += 7
-                break
-            elif junior in cargo or junior in descricao:
-                score_dict[key][junior]["score"] += 3
-                break
-        return score_dict
-    
+        max_score = 10
+        for experience_list in person.experiences:
+            for experience in experience_list:
+                if self.SR in experience.cargo or experience.descricao and self.SR in experience.descricao:
+                    if score_dict[self.LEVEL][self.SR]["score"] == 0:
+                        score_dict[self.LEVEL][self.SR]["score"] += max_score
+                        break
+                elif self.PL in experience.cargo or experience.descricao and self.PL in experience.descricao:
+                    if score_dict[self.LEVEL][self.SR]["score"] == 0:
+                        score_dict[self.LEVEL][self.PL]["score"] += 7
+                        break
+                elif self.JR in experience.cargo or experience.descricao and self.JR in experience.descricao:
+                    if score_dict[self.LEVEL][self.SR]["score"] == 0:
+                        score_dict[self.LEVEL][self.JR]["score"] += 3
+                        break
+        return score_dict, max_score
+
     def __set_score_experiences(self, technologies):
         """
         Adiciona os pontos de cada tecnologia baseado no tempo de experiência.
         """
+        max_score = 10
         for key, value in technologies.items():
             tempo = value["tempo"]
             if self.zero_ano > tempo < self.um_ano:
@@ -338,78 +290,84 @@ class ScoreProfile:
             elif self.dois_anos < tempo < self.tres_anos:
                 technologies[key]['score'] += 7
             elif tempo > self.tres_anos:
-                technologies[key]['score'] += 10
-        return technologies
+                technologies[key]['score'] += max_score
+        return technologies, max_score
 
-    def __set_score_certifications(self, result, score_dict, main_key, key):
+    def __set_score_certifications(self, person, score_dict, main_key):
         """
         Adiciona a pontuação dos certificados.
         """
-        if key in result["certifications"]:
-            score_dict[main_key][key]['score'] += 5
-        return score_dict
+        max_score = 5
+        for key, score in score_dict[main_key].items():
+            for certification in person.certifications:
+                if key in certification.titulo.lower():
+                    score_dict[main_key][key]['score'] += max_score
+        return score_dict, max_score
 
-    def __set_score_skills(self, result, score_dict, main_key, key):
+    def __set_score_skills(self, person, score_dict, main_key):
         """
         Adiciona a pontuação da skill baseado nas indicações.
         """
-        for skill in result["skills"]:
-            if key in skill["titulo"].lower():
-                indications = skill["indications"]
-                verify = skill["verify"]
-                if verify:
-                    score_dict[main_key][key]['score'] += 10
-                else:
-                    if indications < 20:
-                        score_dict[main_key][key]['score'] += 2
-                    elif 20 < indications < 40:
-                        score_dict[main_key][key]['score'] += 4
-                    elif 40 < indications < 60:
-                        score_dict[main_key][key]['score'] += 6
-                    elif 60 < indications < 80:
-                        score_dict[main_key][key]['score'] += 8
-                    elif 80 < indications < 99:
-                        score_dict[main_key][key]['score'] += 10
-        return score_dict
+        max_score = 10
+        for key, score in score_dict[main_key].items():
+            for skill in person.skills:
+                if key in skill.titulo.lower():
+                    if skill.verify:
+                        score_dict[main_key][key]['score'] += max_score
+                    else:
+                        if skill.indications < 20:
+                            score_dict[main_key][key]['score'] += 2
+                        elif 20 < skill.indications < 40:
+                            score_dict[main_key][key]['score'] += 4
+                        elif 40 < skill.indications < 60:
+                            score_dict[main_key][key]['score'] += 6
+                        elif 60 < skill.indications < 80:
+                            score_dict[main_key][key]['score'] += 8
+                        elif 80 < skill.indications < 99:
+                            score_dict[main_key][key]['score'] += max_score
+        return score_dict, max_score
 
-    def __set_score_languages(self, result, score_dict, main_key, key):
+    def __set_score_languages(self, person, score_dict, main_key):
         """
         Adiciona a pontuação do idioma baseado no nível.
         """
-        for language in result["languages"]:
-            if key in language["idioma"].lower():
-                if language["nivel"]:
-                    level = language["nivel"].lower().replace("nível", "").strip()
-                    if level == "fluente ou nativo":
-                        score_dict[main_key][key]['score'] += 10
-                    elif level == "avançado":
-                        score_dict[main_key][key]['score'] += 10
-                    elif level == "intermediário":
-                        score_dict[main_key][key]['score'] += 7
-                    elif level == "básico a intermediário":
-                        score_dict[main_key][key]['score'] += 4
-                    elif level == "básico":
-                        score_dict[main_key][key]['score'] += 1
-        return score_dict
+        max_score = 10
+        for key, score in score_dict[main_key].items():
+            for language in person.languages:
+                if key in language.idioma.lower():
+                    if language.nivel:
+                        level = language.nivel.lower().replace("nível", "").strip()
+                        if level == "fluente ou nativo":
+                            score_dict[main_key][key]['score'] += max_score
+                        elif level == "avançado":
+                            score_dict[main_key][key]['score'] += max_score
+                        elif level == "intermediário":
+                            score_dict[main_key][key]['score'] += 7
+                        elif level == "básico a intermediário":
+                            score_dict[main_key][key]['score'] += 4
+                        elif level == "básico":
+                            score_dict[main_key][key]['score'] += 1
+        return score_dict, max_score
 
-    def __set_score_education(self, result, score_dict):
+    def __set_score_education(self, person, score_dict):
         """
         Adiciona a pontuação baseado na educação.
         """
-        for education in result["education"]:
-            if education == "mestrado":
-                score_dict["education"]['score'] += 10
+        max_score = 10
+        for education in person.education:
+            if education.level == "mestrado":
+                score_dict[self.EDUCATION]['score'] += max_score
                 break
-            elif education == "doutorado":
-                score_dict["education"]['score'] += 10
+            elif education.level == "doutorado":
+                score_dict[self.EDUCATION]['score'] += max_score
                 break
-            elif education == "pós graduação" or education == "pós":
-                score_dict["education"]['score'] += 8
+            elif education.level == "pós graduação" or education.level == "pós":
+                score_dict[self.EDUCATION]['score'] += 8
                 break
-            elif education == "graduação" or education == "bacharel":
-                score_dict["education"]['score'] += 7
+            elif education.level == "graduação" or education.level == "bacharel":
+                score_dict[self.EDUCATION]['score'] += 7
                 break
-            elif education == "técnologo":
-                score_dict["education"]['score'] += 5
+            elif education.level == "técnologo":
+                score_dict[self.EDUCATION]['score'] += 5
                 break
-        return score_dict
+        return score_dict, max_score
