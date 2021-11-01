@@ -15,6 +15,7 @@ from models.Language import Language
 from models.Person import Person
 from models.Skill import Skill
 from utils.bcolors import bcolors
+from utils.log_erro import log_erro
 
 database = Database()
 SEE_MORE_ITEM = 'inline-show-more-text__button'
@@ -39,7 +40,7 @@ class ScrapingProfile:
             try:
                 self.scroll_down_page(self.driver)
             except JavascriptException as e:
-                self.print_erro(e)
+                log_erro(e)
                 print(f"{bcolors.WARNING}Verifique o navegador, necessário ação humana, você tem {bcolors.BOLD}40 segundos{bcolors.ENDC}...{bcolors.ENDC}")
                 sleep(40)
                 self.driver.get(search.url)
@@ -114,7 +115,7 @@ class ScrapingProfile:
                     driver.execute_script("arguments[0].scrollIntoView(true);", element)
                 item.click()
             except ElementClickInterceptedException as e:
-                self.print_erro(e)
+                log_erro(e)
                 if not is_except:
                     driver.execute_script("window.scrollTo(0, {});".format(element.location['y'] - 100))
                     self.click_list(driver, items, element, True)
@@ -128,7 +129,7 @@ class ScrapingProfile:
 
     def print_erro(self, e, msg="ERRO"):
         now = datetime.datetime.now()
-        f = open("../logs.txt", "a")
+        f = open(f"../{now.strftime('%d_%m_%Y')}.txt", "a")
         f.write("[{}] {}".format(str(now), e))
         f.close()
 
@@ -222,7 +223,7 @@ class ScrapingProfile:
                 empresa_list.append(empresa.text.strip())
             except IndexError as e:
                 empresa_list.append(None)
-                self.print_erro(e)
+                log_erro(e)
             descricao = item.find('div', {'class': ['pv-entity__description']})
             if descricao:
                 descricao_list.append(descricao.text.replace("ver menos", "").strip() if item else None)
@@ -243,9 +244,9 @@ class ScrapingProfile:
             else:
                 empresa_list.append(empresa.text.strip())
         except TypeError as e:
-            self.print_erro(e)
+            log_erro(e)
         except Exception as e:
-            self.print_erro(e)
+            log_erro(e)
         return empresa_list, descricao_list
 
     def get_data_time_experience(self, li, tempo_list):

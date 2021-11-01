@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-
+import winsound
 from selenium import webdriver
 from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.chrome.options import Options
@@ -18,6 +18,8 @@ SCRAPING_PROFILES = 2
 SCORE_AND_EXPORT = 3
 ALL_OPTIONS = 4
 CLOSE_APP = 5
+URL_LOGIN = 'https://www.linkedin.com/uas/login'
+DEBUG = False
 
 
 def main():
@@ -26,8 +28,32 @@ def main():
     database.create_tables_if_not_exists()
     driver = config()
     print(text_waiting_login)
+    winsound.Beep(250, 100)
     login(driver)
+    winsound.Beep(500, 100)
     choose(driver)
+
+
+def login(driver):
+    result = False
+    if DEBUG:
+        login_debug(driver)
+        result = True
+    else:
+        option = input(text_login)
+        if option.lower() == 'y':
+            result = True
+        elif option.lower() == 'n':
+            result = False
+            close(driver)
+        else:
+            print(text_login_error)
+            login(driver)
+    if result and driver.current_url != URL_LOGIN:
+        return result
+    else:
+        print(text_login_its_a_trap)
+        login(driver)
 
 
 def create_directory():
@@ -36,15 +62,8 @@ def create_directory():
     directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
     if not os.path.exists(directory_main):
         os.mkdir(directory_main)
-    create_directory_database(path_absolute, directory_main)
     create_directory_export(path_absolute, directory_main)
-
-
-def create_directory_database(path_absolute, directory_main):
-    path_parent_database = os.path.join(directory_main, "database")
-    directory_database = os.path.join(path_absolute.parent.absolute(), path_parent_database)
-    if not os.path.exists(directory_database):
-        os.mkdir(directory_database)
+    create_directory_logs(path_absolute, directory_main)
 
 
 def create_directory_export(path_absolute, directory_main):
@@ -52,6 +71,13 @@ def create_directory_export(path_absolute, directory_main):
     directory_export = os.path.join(path_absolute.parent.absolute(), path_parent_export)
     if not os.path.exists(directory_export):
         os.mkdir(directory_export)
+
+
+def create_directory_logs(path_absolute, directory_main):
+    path_parent_logs = os.path.join(directory_main, "logs")
+    directory_logs = os.path.join(path_absolute.parent.absolute(), path_parent_logs)
+    if not os.path.exists(directory_logs):
+        os.mkdir(directory_logs)
 
 
 def choose(driver):
@@ -94,6 +120,7 @@ def profile(driver):
 
 
 def search(driver):
+    winsound.Beep(250, 100)
     url_filter = input(text_url_filter)
     print("\n # Search # \n")
     try:
@@ -107,12 +134,12 @@ def config():
     chrome_options = Options()
     chrome_options.add_experimental_option("detach", True)
     driver = webdriver.Chrome(executable_path=r"./chromedriver.exe", options=chrome_options)
-    driver.get('https://www.linkedin.com/uas/login')
+    driver.get(URL_LOGIN)
     driver.maximize_window()
     return driver
 
 
-def login(driver):
+def login_debug(driver):
     username = driver.find_element_by_id('username')
     username_text = os.environ.get('login')
     username.send_keys(username_text)

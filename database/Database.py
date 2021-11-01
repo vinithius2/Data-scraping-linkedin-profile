@@ -1,10 +1,12 @@
 import os
 import sqlite3
+from pathlib import Path
 
 
 class Database:
     def __init__(self):
-        self.connection = sqlite3.connect(os.path.join("C:\\scrapingLinkedinProfiles\\database", 'database.db'))
+        self.path = self.create_directory()
+        self.connection = sqlite3.connect(os.path.join(self.path, 'database.db'))
         self.cursor_db = self.connection.cursor()
 
     _instances = {}
@@ -14,6 +16,22 @@ class Database:
             instance = super().__call__(*args, **kwargs)
             cls._instances[cls] = instance
         return cls._instances[cls]
+
+    def create_directory(self):
+        path_parent = "scrapingLinkedinProfiles"
+        path_absolute = Path("/")
+        directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
+        if not os.path.exists(directory_main):
+            os.mkdir(directory_main)
+        directory_database = self.create_directory_database(path_absolute, directory_main)
+        return directory_database
+
+    def create_directory_database(self, path_absolute, directory_main):
+        path_parent_database = os.path.join(directory_main, "database")
+        directory_database = os.path.join(path_absolute.parent.absolute(), path_parent_database)
+        if not os.path.exists(directory_database):
+            os.mkdir(directory_database)
+        return directory_database
 
     def create_tables_if_not_exists(self):
         self.create_table_person()

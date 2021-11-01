@@ -9,6 +9,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from database.dao.SearchDao import SearchDao
 from models.Search import Search
 from utils.bcolors import bcolors
+from utils.log_erro import log_erro
 
 
 class ScrapingSearch:
@@ -46,9 +47,9 @@ class ScrapingSearch:
                         print(f"{bcolors.RED}{bcolors.BOLD}[NÃO CADASTRADO]{bcolors.ENDC} Usuário fora da sua rede...{bcolors.ENDC} - {url_profile}")
                 self.click_next(disable, count)
             except NoSuchElementException as e:
-                self.print_erro(e)
+                log_erro(e)
             except AttributeError as e:
-                self.print_erro(e)
+                log_erro(e)
 
     def page(self, soup):
         disable = False
@@ -82,6 +83,6 @@ class ScrapingSearch:
 
     def print_erro(self, e, msg="ERRO"):
         now = datetime.datetime.now()
-        f = open("../logs.txt", "a")
+        f = open(f"../{now.strftime('%d_%m_%Y')}.txt", "a")
         f.write("[{}] {}".format(str(now), e))
         f.close()
