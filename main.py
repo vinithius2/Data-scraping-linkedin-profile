@@ -1,11 +1,13 @@
 import os
 import sys
-from pathlib import Path
 import winsound
+from pathlib import Path
+
 from selenium import webdriver
 from selenium.common.exceptions import InvalidArgumentException
 from selenium.webdriver.chrome.options import Options
 
+from config import *
 from database.Database import Database
 from scraping.ScoreProfile import ScoreProfile
 from scraping.ScrapingProfile import ScrapingProfile
@@ -13,13 +15,6 @@ from scraping.ScrapingSearch import ScrapingSearch
 from utils.texts import *
 
 database = Database()
-SEARCH_PROFILES = 1
-SCRAPING_PROFILES = 2
-SCORE_AND_EXPORT = 3
-ALL_OPTIONS = 4
-CLOSE_APP = 5
-URL_LOGIN = 'https://www.linkedin.com/uas/login'
-DEBUG = False
 
 
 def main():
@@ -57,6 +52,9 @@ def login(driver):
 
 
 def create_directory():
+    """
+    Cria o diretório principal
+    """
     path_parent = "scrapingLinkedinProfiles"
     path_absolute = Path("/")
     directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
@@ -67,6 +65,9 @@ def create_directory():
 
 
 def create_directory_export(path_absolute, directory_main):
+    """
+    Cria o diretório de arquivos exportados
+    """
     path_parent_export = os.path.join(directory_main, "export")
     directory_export = os.path.join(path_absolute.parent.absolute(), path_parent_export)
     if not os.path.exists(directory_export):
@@ -74,6 +75,9 @@ def create_directory_export(path_absolute, directory_main):
 
 
 def create_directory_logs(path_absolute, directory_main):
+    """
+    Cria o diretório de LOGS
+    """
     path_parent_logs = os.path.join(directory_main, "logs")
     directory_logs = os.path.join(path_absolute.parent.absolute(), path_parent_logs)
     if not os.path.exists(directory_logs):
@@ -103,18 +107,17 @@ def choose(driver):
 
 def close(driver):
     print(text_closed)
+    music_terminator()
     driver.close()
     sys.exit()
 
 
 def score_and_export(driver):
-    print("\n # Score # \n")
     ScoreProfile(database).start()
     choose(driver)
 
 
 def profile(driver):
-    print("\n # Scraping # \n")
     ScrapingProfile(driver, database).start()
     choose(driver)
 
@@ -122,7 +125,6 @@ def profile(driver):
 def search(driver):
     winsound.Beep(250, 100)
     url_filter = input(text_url_filter)
-    print("\n # Search # \n")
     try:
         ScrapingSearch(url_filter, database, driver).start()
     except InvalidArgumentException as e:
@@ -131,6 +133,9 @@ def search(driver):
 
 
 def config():
+    """
+    Configuração inicial para o navegador Chrome.
+    """
     chrome_options = Options()
     chrome_options.add_experimental_option("detach", True)
     driver = webdriver.Chrome(executable_path=r"./chromedriver.exe", options=chrome_options)
@@ -140,6 +145,9 @@ def config():
 
 
 def login_debug(driver):
+    """
+    Usado quando estiver em modo Debug, agilizando o Login
+    """
     username = driver.find_element_by_id('username')
     username_text = os.environ.get('login')
     username.send_keys(username_text)
@@ -148,6 +156,18 @@ def login_debug(driver):
     password.send_keys(password_text)
     log_in_button = driver.find_element_by_class_name('from__button--floating')
     log_in_button.click()
+
+
+def music_terminator():
+    """
+    =D Yeahhh!
+    """
+    winsound.Beep(80, 390)
+    winsound.Beep(90, 200)
+    winsound.Beep(80, 400)
+    winsound.Beep(90, 200)
+    winsound.Beep(80, 400)
+    winsound.Beep(80, 500)
 
 
 if __name__ == '__main__':

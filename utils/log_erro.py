@@ -1,6 +1,6 @@
+import datetime
 import os
 from pathlib import Path
-import datetime
 
 
 def __get_directory():
@@ -14,7 +14,7 @@ def __get_directory():
     return path_logs
 
 
-def log_erro(e, msg="ERRO"):
+def log_erro(e):
     path_logs = __get_directory()
     now = datetime.datetime.now()
     f = open(path_logs, "a")

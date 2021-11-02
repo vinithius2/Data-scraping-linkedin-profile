@@ -1,11 +1,14 @@
 import datetime
-import subprocess, os, platform
-from difflib import SequenceMatcher
+import os
+import platform
+import subprocess
 import winsound
-from time import sleep
+from difflib import SequenceMatcher
 
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
+from openpyxl.utils import get_column_letter
+from unidecode import unidecode
 
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
@@ -54,7 +57,19 @@ class ScoreProfile:
         self.PL = "pleno"
         self.JR = "júnior"
         self.UNKNOWN = "Desconhecido"
-        self.DEBUG = True
+        self.columns_export = {
+            "media": None,
+            "url_profile": None,
+            "name": None,
+            "local": None,
+            "education": None,
+            "level": None,
+            "experience": None,
+            "email": None,
+            "phone_number": None,
+            "language_level": None,
+            "technologies": dict()
+        }
         self.header_list = ["Media", "URL", "Nome", "Local", "Educação", "Nível", "Experiência", "Email", "Telefone", "Nível de inglês"]
         self.tech_items = ["Tempo", "Certificações", "Selo Linkedin", "Indicações"]
         self.job_characteristics = {
@@ -64,6 +79,9 @@ class ScoreProfile:
         }
 
     def start(self):
+        """
+        Incialização do cálculo ponderado nos perfis e exportação para XLS.
+        """
         try:
             winsound.Beep(250, 100)
             option = input(text_option_score)
@@ -71,64 +89,76 @@ class ScoreProfile:
             list_result, search_list = self.__list_person()
             result_list = self.__weighted_calculation(list_result, search_list)
             result = sorted(result_list, key=lambda d: d['scores']['media'], reverse=True)
-            self.export(result)
+            self.__export(result)
             print(f"\n{bcolors.GREEN}Weighted calculation performed!{bcolors.ENDC}")
         except ValueError as e:
             print(text_error_score)
             self.start()
 
     def __list_person(self):
+        """
+        Baseado no filtro que é retornado, traz todos os perfis necessários.
+        """
         search_list = SearchDao(self.database).select_search_person_id_is_not_null()
         list_result = list()
         for search in search_list:
             list_result.append(PersonDao(database=self.database).select_people_by_id(search.person_id))
         return list_result, search_list
 
-    def export(self, result_list):
+    def __export(self, result_list):
+        """
+        Preparação dos dados para a planilha e exportação do arquivo.
+        """
         workbook = Workbook()
         sheet = workbook.active
         sheet.title = "Profile Scores"
-        font_header, border, alignment, pattern_fill, number_format = self.style_header()
-        sheet = self.create_header_xls(sheet, font_header, border, alignment, pattern_fill)
-
+        font_header, border, alignment, pattern_fill, number_format = self.__style_header()
+        sheet = self.__create_header_xls(sheet, font_header, border, alignment, pattern_fill)
+        columns_export_size = self.__set_size_header()
         row_number = 2
         for row in result_list:
-            columns = self.get_data_for_openxls(row)
+            columns = self.__get_data_for_openxls(row)
             cell_number = 1
             row_number += 1
             for key, value in columns.items():
                 if key == self.MEDIA:
-                    color, msg, hexadecimal = self.get_color_media(value)
+                    columns_export_size = self.__set_max_size_col(columns_export_size, key, value)
+                    color, msg, hexadecimal = self.__get_color_media(value)
                     cell = sheet.cell(row=row_number, column=cell_number, value=value)
                     cell.font = Font(name='Arial Black', size=11, bold=True, italic=False, vertAlign=None,
                                      underline='none', strike=False, color=hexadecimal, shadow=True)
                     cell.alignment = alignment
                     cell.border = border
                 elif key == self.URL_PROFILE:
+                    columns_export_size = self.__set_max_size_col(columns_export_size, key, "Acessar")
                     cell = sheet.cell(row=row_number, column=cell_number, value=value)
                     cell.font = Font(size=11, bold=True, italic=False, vertAlign=None,
                                      underline='single', strike=False, color="2986CC", shadow=True)
                     cell.alignment = alignment
                     cell.border = border
                 elif key == self.LEVEL:
-                    level, font = self.get_style_or_unknown(value)
+                    level, font = self.__get_style_or_unknown(value)
+                    columns_export_size = self.__set_max_size_col(columns_export_size, key, level)
                     cell = sheet.cell(row=row_number, column=cell_number, value=level)
                     cell.font = font
                     cell.alignment = alignment
                     cell.border = border
                 elif key == self.EDUCATION:
-                    level, font = self.get_style_or_unknown(value)
+                    level, font = self.__get_style_or_unknown(value)
+                    columns_export_size = self.__set_max_size_col(columns_export_size, key, level)
                     cell = sheet.cell(row=row_number, column=cell_number, value=level)
                     cell.font = font
                     cell.alignment = alignment
                     cell.border = border
                 elif key == self.LANGUAGE_LEVEL:
-                    level, font = self.get_style_or_unknown(value)
+                    level, font = self.__get_style_or_unknown(value)
+                    columns_export_size = self.__set_max_size_col(columns_export_size, key, level)
                     cell = sheet.cell(row=row_number, column=cell_number, value=level)
                     cell.font = font
                     cell.alignment = alignment
                     cell.border = border
                 elif key == self.EXPERIENCE and value == self.UNKNOWN:
+                    columns_export_size = self.__set_max_size_col(columns_export_size, key, value)
                     cell = sheet.cell(row=row_number, column=cell_number, value=value)
                     cell.font = Font(bold=False, italic=True)
                     cell.alignment = alignment
@@ -137,23 +167,85 @@ class ScoreProfile:
                     if columns[self.TECHNOLOGIES]:
                         for key in self.job_characteristics[self.TECHNOLOGIES]:
                             tech_dict = columns[self.TECHNOLOGIES][key]
-                            cell_number = self.set_cell_tempo(sheet, tech_dict, row_number, cell_number, alignment, border)
-                            cell_number = self.set_cell_certification(sheet, tech_dict, row_number, cell_number, alignment, border)
-                            cell_number = self.set_cell_verify(sheet, tech_dict, row_number, cell_number, alignment, border)
-                            cell_number = self.set_cell_indications(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            cell_number, tempo = self.__set_cell_tempo(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            columns_export_size = self.__set_max_size_col(
+                                columns_export_size,
+                                f"{unidecode(key.lower())}_{unidecode(self.tech_items[0].lower())}",
+                                tempo
+                            )
+                            cell_number, status_certification = self.__set_cell_certification(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            columns_export_size = self.__set_max_size_col(
+                                columns_export_size,
+                                f"{unidecode(key.lower())}_{unidecode(self.tech_items[1].lower())}",
+                                status_certification
+                            )
+                            cell_number, status_verify = self.__set_cell_verify(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            columns_export_size = self.__set_max_size_col(
+                                columns_export_size,
+                                f"{unidecode(key.lower())}_{unidecode(self.tech_items[2].lower())}",
+                                status_verify
+                            )
+                            cell_number, indications = self.__set_cell_indications(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            columns_export_size = self.__set_max_size_col(
+                                columns_export_size,
+                                f"{unidecode(key.lower())}_{unidecode(self.tech_items[3].lower())}",
+                                indications
+                            )
                 else:
+                    columns_export_size = self.__set_max_size_col(columns_export_size, key, value)
                     cell = sheet.cell(row=row_number, column=cell_number, value=value)
                     cell.alignment = alignment
                     cell.border = border
                 cell_number += 1
-        name_file = datetime.datetime.now().strftime("%d_%m_%Y_%H%M%S")
+        self.__expand_columns(columns_export_size, sheet)
+        name_file = datetime.datetime.now().strftime("%m_%d_%Y_%H%M%S")
         file_path = f"C:\\scrapingLinkedinProfiles\\export\\{name_file}.xlsx"
         workbook.save(file_path)
         print(f"\n{bcolors.GREEN}Export XLS Finished!{bcolors.ENDC}: {file_path}")
-        self.open_file(file_path)
+        self.__open_file(file_path)
         winsound.MessageBeep()
 
-    def open_file(self, file_path):
+    def __set_size_header(self):
+        """
+        Verificar qual o valor máximo de caracter no HEADER e adicionar no dicionário.
+        """
+        list_tech_header = len(self.job_characteristics["technologies"]) * self.tech_items
+        self.header_list.extend(list_tech_header)
+        columns_export_size = self.columns_export.copy()
+        del columns_export_size["technologies"]
+        for value in zip(self.header_list, columns_export_size):
+            columns_export_size = self.__set_max_size_col(columns_export_size, value[1], value[0])
+        for tech in self.job_characteristics["technologies"]:
+            for value in self.tech_items:
+                key = f"{unidecode(tech.lower())}_{unidecode(value.lower())}"
+                columns_export_size = self.__set_max_size_col(columns_export_size, key, value)
+        return columns_export_size
+
+    def __set_max_size_col(self, columns_export_size, key, value, size_cell=4):
+        """
+        Verificar qual o valor máximo de caracter e adicionar no dicionário somente se o valor for maior do que o existente.
+        """
+        if key in columns_export_size.keys():
+            if columns_export_size[key]:
+                columns_export_size[key] = max(columns_export_size[key], len(str(value)) + size_cell)
+            else:
+                columns_export_size[key] = len(str(value)) + size_cell
+        else:
+            columns_export_size[key] = len(str(value)) + size_cell
+        return columns_export_size
+
+    def __expand_columns(self, columns_export_size, sheet):
+        """
+        Expandir células da coluna conforme valores recebidos no dicionário.
+        """
+        for idx, (key, value) in enumerate(columns_export_size.items()):
+            if value:
+                sheet.column_dimensions[get_column_letter(idx + 1)].width = value
+
+    def __open_file(self, file_path):
+        """
+        Verifica o SO e abre abre o respectivo programa para XLS.
+        """
         if platform.system() == 'Darwin':  # macOS
             subprocess.call(('open', file_path))
         elif platform.system() == 'Windows':  # Windows
@@ -161,50 +253,69 @@ class ScoreProfile:
         else:  # linux variants
             subprocess.call(('xdg-open', file_path))
 
-    def get_style_or_unknown(self, value):
+    def __get_style_or_unknown(self, value):
+        """
+        Retorna o texto com a fonte BOLD, caso o valor seja None retorna com a fonte ITALIC e o texto 'Desconhecido'.
+        """
         level = value if value else self.UNKNOWN
         font = Font(bold=True, shadow=True) if value else Font(bold=False, italic=True)
         return level, font
 
-    def set_cell_tempo(self, sheet, tech_dict, row_number, cell_number, alignment, border):
-        tempo, font = self.get_formatted_experience_time(tech_dict["tempo"])
+    def __set_cell_tempo(self, sheet, tech_dict, row_number, cell_number, alignment, border):
+        """
+        Prepara a célula da planilha responsável por exibir tempo de experiência na tecnologia.
+        """
+        tempo, font = self.__get_formatted_experience_time(tech_dict["tempo"])
         cell_tempo = sheet.cell(row=row_number, column=cell_number, value=tempo)
         cell_tempo.alignment = alignment
         cell_tempo.border = border
         cell_tempo.font = font
         cell_number += 1
-        return cell_number
+        return cell_number, tempo
 
-    def set_cell_certification(self, sheet, tech_dict, row_number, cell_number, alignment, border):
-        font, pattern_fill = self.get_style_status(tech_dict["certification"])
-        status = self.get_sim_nao(tech_dict["certification"])
+    def __set_cell_certification(self, sheet, tech_dict, row_number, cell_number, alignment, border):
+        """
+        Prepara a célula da planilha responsável por exibir aa certificações.
+        """
+        font, pattern_fill = self.__get_style_status(tech_dict["certification"])
+        status = self.__get_sim_nao(tech_dict["certification"])
         cell_certification = sheet.cell(row=row_number, column=cell_number, value=status)
         cell_certification.alignment = alignment
         cell_certification.fill = pattern_fill
         cell_certification.border = border
         cell_certification.font = font
         cell_number += 1
-        return cell_number
+        return cell_number, status
 
-    def set_cell_verify(self, sheet, tech_dict, row_number, cell_number, alignment, border):
-        font, pattern_fill = self.get_style_status(tech_dict["verify"])
-        cell_verify = sheet.cell(row=row_number, column=cell_number, value=self.get_sim_nao(tech_dict["verify"]))
+    def __set_cell_verify(self, sheet, tech_dict, row_number, cell_number, alignment, border):
+        """
+        Prepara a célula da planilha responsável por exibir a verificação do Linkedin.
+        """
+        font, pattern_fill = self.__get_style_status(tech_dict["verify"])
+        status = self.__get_sim_nao(tech_dict["verify"])
+        cell_verify = sheet.cell(row=row_number, column=cell_number, value=status)
         cell_verify.alignment = alignment
         cell_verify.fill = pattern_fill
         cell_verify.border = border
         cell_verify.font = font
         cell_number += 1
-        return cell_number
+        return cell_number, status
 
-    def set_cell_indications(self, sheet, tech_dict, row_number, cell_number, alignment, border):
+    def __set_cell_indications(self, sheet, tech_dict, row_number, cell_number, alignment, border):
+        """
+        Retorna SIM caso seja verdadeiro e NÃO caso falso.
+        """
         cell_indications = sheet.cell(row=row_number, column=cell_number, value=tech_dict["indications"])
         cell_indications.alignment = alignment
         cell_indications.border = border
         cell_indications.font = Font(bold=True) if tech_dict["indications"] > 0 else Font(bold=False)
         cell_number += 1
-        return cell_number
+        return cell_number, tech_dict["indications"]
 
-    def get_style_status(self, status):
+    def __get_style_status(self, status):
+        """
+        Retorna VERDE caso seja verdadeiro e VERMELHO caso falso.
+        """
         if status:
             pattern_fill = PatternFill(start_color="00B050", end_color="00b050", fill_type="solid")
             font = Font(bold=True, shadow=True)
@@ -214,13 +325,19 @@ class ScoreProfile:
             font = Font(bold=True, shadow=True)
             return font, pattern_fill
 
-    def get_sim_nao(self, status):
+    def __get_sim_nao(self, status):
+        """
+        Retorna SIM caso seja verdadeiro e NÃO caso falso.
+        """
         if status:
             return "SIM"
         else:
             return "NÃO"
 
-    def get_data_for_openxls(self, row):
+    def __get_data_for_openxls(self, row):
+        """
+        Preparo incial dos dados para a respectiva linha no excel.
+        """
         media = row['scores']['media']
         name = row['person'].name
         local = row['person'].local
@@ -238,24 +355,25 @@ class ScoreProfile:
             if value['score'] > 0:
                 level = key.title()
                 break
-        time_experience = self.get_time_experience(row['person'].experiences)
+        time_experience = self.__get_time_experience(row['person'].experiences)
         time_experience = time_experience if time_experience else self.UNKNOWN
-        columns = {
-            "media": media,
-            "url_profile": '=HYPERLINK("{}", "{}")'.format(url_profile, "Acessar"),
-            "name": name,
-            "local": local,
-            "education": education,
-            "level": level,
-            "experience": time_experience,
-            "email": email,
-            "phone_number": phone_number,
-            "language_level": language_level,
-            "technologies": row['scores']['technologies']
-        }
-        return columns
+        self.columns_export["media"] = media
+        self.columns_export["url_profile"] = '=HYPERLINK("{}", "{}")'.format(url_profile, "Acessar")
+        self.columns_export["name"] = name
+        self.columns_export["local"] = local
+        self.columns_export["education"] = education
+        self.columns_export["level"] = level
+        self.columns_export["experience"] = time_experience
+        self.columns_export["email"] = email
+        self.columns_export["phone_number"] = phone_number
+        self.columns_export["language_level"] = language_level
+        self.columns_export["technologies"] = row['scores']['technologies']
+        return self.columns_export
 
-    def get_time_experience(self, experiences):
+    def __get_time_experience(self, experiences):
+        """
+        Faz o cálculo total do tempo de experiência do perfil e retorna um texto amigável.
+        """
         total_anos = 0
         total_meses = 0
         for experience_list in experiences:
@@ -272,11 +390,14 @@ class ScoreProfile:
                 anos_aux += 1
                 meses_aux = 0
         meses_restantes = total_meses - (anos_aux * 12)
-        anos_text = self.get_format_time_experience(total_anos, "{} ano", "{} anos")
-        meses_text = self.get_format_time_experience(meses_restantes, "{} mês", "{} meses")
+        anos_text = self.__get_format_time_experience(total_anos, "{} ano", "{} anos")
+        meses_text = self.__get_format_time_experience(meses_restantes, "{} mês", "{} meses")
         return f"{anos_text} {meses_text}".strip()
 
-    def get_format_time_experience(self, value, text_singular, text_plural):
+    def __get_format_time_experience(self, value, text_singular, text_plural):
+        """
+        Retorna o texto no plural ou singular dependendo do valor recebido
+        """
         result = ""
         if value == 1:
             result = text_singular.format(value)
@@ -284,7 +405,10 @@ class ScoreProfile:
             result = text_plural.format(value)
         return result
 
-    def create_header_xls(self, sheet, font_header, border, alignment, pattern_fill):
+    def __create_header_xls(self, sheet, font_header, border, alignment, pattern_fill):
+        """
+        Faz as mesclagens necessários no Header e adiciona os estilos.
+        """
         item_header = 0
         for item in range(len(self.header_list)):
             item += 1
@@ -325,7 +449,10 @@ class ScoreProfile:
                 index += 1
         return sheet
 
-    def get_formatted_experience_time(self, tempo):
+    def __get_formatted_experience_time(self, tempo):
+        """
+        Pega o tempo em meses e retorna um texto amigável
+        """
         font_bold = Font(bold=True)
         if self.zero_ano > tempo < self.um_ano:
             return "Menor igual a 1 ano.", font_bold
@@ -337,7 +464,10 @@ class ScoreProfile:
             return "Maior que 3 anos.", font_bold
         return self.UNKNOWN, Font(bold=False, italic=True)
 
-    def style_header(self):
+    def __style_header(self):
+        """
+        Retorna o estilo do cabeçalho da planilha
+        """
         font_header = Font(name='Calibri', size=11, bold=True, italic=False, vertAlign=None, underline='none',
                            strike=False, color='FF000000')
         side = Side(border_style=None, style='thin', color='000000')
@@ -349,7 +479,10 @@ class ScoreProfile:
         number_format = 'General'
         return font_header, border, alignment, pattern_fill, number_format
 
-    def get_color_media(self, media):
+    def __get_color_media(self, media):
+        """
+        Baseado na média ponderada é retornado a cor e o texto referente aquele nível de pontos
+        """
         hexadecimal = None
         color = None
         msg = None
@@ -372,6 +505,9 @@ class ScoreProfile:
         return color, msg, hexadecimal
 
     def __calculate_time(self, anos, meses):
+        """
+        Converte os anos em meses e faz a soma do total em meses.
+        """
         anos = anos or 0
         meses = meses or 0
         result = (anos * 12) + meses
@@ -442,6 +578,9 @@ class ScoreProfile:
         return result_list
 
     def __calculation_technologies(self, person, score_dict):
+        """
+        Cálculo ponderado das técnologias
+        """
         score_dict = self.__set_time_experiences_descricao(person, score_dict, self.TECHNOLOGIES)
         score_dict, max_score_01 = self.__set_score_skills(person, score_dict, self.TECHNOLOGIES)
         score_dict, max_score_02 = self.__set_score_subtitle(person, score_dict, self.TECHNOLOGIES)
@@ -452,6 +591,9 @@ class ScoreProfile:
         return score_dict
 
     def __calculation_language(self, person, score_dict):
+        """
+        Cálculo ponderado do Inglês
+        """
         score_dict, max_score_06 = self.__set_score_languages(person, score_dict, self.LANGUAGE)
         score_dict, max_score_07 = self.__set_score_subtitle(person, score_dict, self.LANGUAGE)
         score_dict, max_score_08 = self.__set_score_about(person, score_dict, self.LANGUAGE)
@@ -461,18 +603,24 @@ class ScoreProfile:
         return score_dict
 
     def __calculation_education(self, person, score_dict):
+        """
+        Cálculo ponderado do nível educacional
+        """
         score_dict, max_score_11 = self.__set_score_education(person, score_dict)
         self.max_score_education = sum([max_score_11])
         return score_dict
 
     def __calculation_level(self, person, score_dict):
-        score_dict, max_score_12 = self.set_score_experiences_cargo(person, score_dict)
+        """
+        Cálculo ponderado do nível profissional
+        """
+        score_dict, max_score_12 = self.__set_score_experiences_cargo(person, score_dict)
         self.max_score_level = sum([max_score_12])
         return score_dict
 
     def __media(self, score_dict):
         """
-        Calculo da média ponderada
+        Cálculo da média ponderada
         """
         max_score = self.__max_score(score_dict)
         sum_scores = self.__sum_all_scores(score_dict)
@@ -556,7 +704,7 @@ class ScoreProfile:
                         score_dict[main_key][key]['tempo'] += tempo
         return score_dict
 
-    def set_score_experiences_cargo(self, person, score_dict):
+    def __set_score_experiences_cargo(self, person, score_dict):
         """
         Verifica se existe no 'saco de palavras' as palavras 'sênior', 'pleno' e 'júnior', caso exista algum, o loop é
         interrompido, pois só é válido uma única validação buscando a experiência mais recente até a mais antiga.
@@ -734,31 +882,49 @@ class ScoreProfile:
         return score_dict, max_score
 
     def __master_degree(self, level):
+        """
+        Verifica se tem mestrado na String
+        """
         if self.MESTRADO == level:
             return True
         return False
 
     def __doctorate_degree(self, level):
+        """
+        Verifica se tem doutorado na String
+        """
         if self.DOUTORADO == level:
             return True
         return False
 
     def __post_graduate_degree(self, level):
+        """
+        Verifica se tem pós graduação ou especialização na String
+        """
         if self.POS_GRADUACAO == level or self.POS == level or self.ESPECIALIZACAO == level:
             return True
         return False
 
     def __graduate_degree(self, level):
+        """
+        Verifica se tem graduação na String
+        """
         if self.GRADUACAO == level or self.GRADUADO == level or self.BACHAREL == level or self.BACHARELADO == level:
             return True
         return False
 
     def __technologist_degree(self, level):
+        """
+        Verifica se tem tecnólogo na String
+        """
         if self.TECNOLOGO == level:
             return True
         return False
 
     def similarity(self, text_db, text_static):
+        """
+        Verifica se tem string com similaridade e retorna a porcentagem de acerto
+        """
         seq = SequenceMatcher(None, text_db, text_static)
         percent = seq.ratio() * 100
         return round(percent, 2)

@@ -1,3 +1,4 @@
+from config import VERSION
 from utils.bcolors import bcolors
 
 text_logo = f"""
@@ -9,7 +10,7 @@ text_logo = f"""
     #    ____) | (__| | | (_| | |_) | | | | | (_| | | |____| | | | |   <  __/ (_| | | | | | | |   | | | (_) | | | | |  __/
     #   |_____/ \___|_|  \__,_| .__/|_|_| |_|\__, | |______|_|_| |_|_|\_\___|\__,_|_|_| |_| |_|   |_|  \___/|_| |_|_|\___|
     #                         | |             __/ |                                                                       
-    #                         |_|            |___/ {bcolors.ENDC}                                                                  {bcolors.UNDERLINE}V 1.0{bcolors.ENDC}
+    #                         |_|            |___/ {bcolors.ENDC}                                                                  {bcolors.UNDERLINE}V {VERSION}{bcolors.ENDC}
     {bcolors.HEADER}######################################################################################################################{bcolors.ENDC} 
     """
 
@@ -32,7 +33,7 @@ text_closed = f"""
            \  \       \ |     | /        /
             \  \      \        /
      {bcolors.ENDC} 
-     {bcolors.UNDERLINE}Closing app Scraping Linkedin Profile V 1.0...{bcolors.ENDC}
+     {bcolors.UNDERLINE}Closing app Scraping Linkedin Profile V {VERSION}...{bcolors.ENDC}
      
      {bcolors.HEADER}#################### CONTACT ####################{bcolors.ENDC}
      Dev: {bcolors.UNDERLINE}Marcos Vinithius =D{bcolors.ENDC}

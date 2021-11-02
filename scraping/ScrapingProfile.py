@@ -1,4 +1,3 @@
-import datetime
 import itertools
 from time import sleep
 
@@ -20,10 +19,6 @@ from utils.log_erro import log_erro
 database = Database()
 SEE_MORE_ITEM = 'inline-show-more-text__button'
 SEE_MORE_ALL_ITEMS = 'pv-profile-section__see-more-inline'
-HEADER_CONTENTS = 'pv-entity__summary-info'
-CONTENTS = 'inline-show-more-text'
-# Mensagem
-NAO_EXISTE = "NÃO EXISTE NO PERFIL"
 
 
 class ScrapingProfile:
@@ -33,8 +28,7 @@ class ScrapingProfile:
         self.database = database
 
     def start(self):
-        # search_list = SearchDao(self.database).select_search_person_id_is_null()
-        search_list = SearchDao(self.database).select_search_by_person_id(182)
+        search_list = SearchDao(self.database).select_search_person_id_is_null()
         for search in search_list:
             self.driver.get(search.url_profile)
             try:
@@ -69,7 +63,7 @@ class ScrapingProfile:
             list_see_more_about = about_section.find_elements_by_class_name(SEE_MORE_ITEM)
             self.click_list(driver, list_see_more_about, about_section)
         except NoSuchElementException as e:
-            self.print_erro(e, NAO_EXISTE)
+            log_erro(e)
 
     def get_open_experience(self, driver):
         try:
@@ -79,7 +73,7 @@ class ScrapingProfile:
             list_item_see_more_experience = experience_section.find_elements_by_class_name(SEE_MORE_ITEM)
             self.click_list(driver, list_item_see_more_experience, experience_section)
         except NoSuchElementException as e:
-            self.print_erro(e, NAO_EXISTE)
+            log_erro(e)
 
     def get_open_certifications(self, driver):
         try:
@@ -87,7 +81,7 @@ class ScrapingProfile:
             list_all_see_more_certifications = certifications_section.find_elements_by_class_name(SEE_MORE_ALL_ITEMS)
             self.click_list(driver, list_all_see_more_certifications, certifications_section)
         except NoSuchElementException as e:
-            self.print_erro(e, NAO_EXISTE)
+            log_erro(e)
 
     def get_open_accomplishments(self, driver):
         try:
@@ -97,7 +91,7 @@ class ScrapingProfile:
                 'pv-accomplishments-block__expand')
             self.click_list(driver, list_all_see_more_accomplishments, accomplishments_language_section)
         except NoSuchElementException as e:
-            self.print_erro(e, NAO_EXISTE)
+            log_erro(e)
 
     def get_open_skill(self, driver):
         try:
@@ -106,7 +100,7 @@ class ScrapingProfile:
                 'pv-profile-section__card-action-bar')
             self.click_list(driver, list_skill_section_see_more, skill_section)
         except NoSuchElementException as e:
-            self.print_erro(e, NAO_EXISTE)
+            log_erro(e)
 
     def click_list(self, driver, items, element, is_except=False):
         for item in items:
@@ -126,12 +120,6 @@ class ScrapingProfile:
             current_scroll_position += speed
             driver.execute_script("window.scrollTo(0, {});".format(current_scroll_position))
             new_height = driver.execute_script("return document.body.scrollHeight")
-
-    def print_erro(self, e, msg="ERRO"):
-        now = datetime.datetime.now()
-        f = open(f"../{now.strftime('%d_%m_%Y')}.txt", "a")
-        f.write("[{}] {}".format(str(now), e))
-        f.close()
 
     def get_person(self, driver, url_profile):
         html_page = driver.page_source
@@ -179,7 +167,7 @@ class ScrapingProfile:
 
     def get_about(self, soup):
         container_about = soup.find('section', {'class': ['pv-about-section']})
-        about = container_about.find('div', {'class': [CONTENTS]})
+        about = container_about.find('div', {'class': ['inline-show-more-text']})
         about = about.text.strip() if about else None
         return about
 
