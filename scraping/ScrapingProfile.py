@@ -2,9 +2,10 @@ import itertools
 from time import sleep
 
 from bs4 import BeautifulSoup
-from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, JavascriptException
+from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import JavascriptException
+from selenium.common.exceptions import NoSuchElementException
 
-from database.Database import Database
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
 from models.Certification import Certification
@@ -15,10 +16,8 @@ from models.Person import Person
 from models.Skill import Skill
 from utils.bcolors import bcolors
 from utils.log_erro import log_erro
-
-database = Database()
-SEE_MORE_ITEM = 'inline-show-more-text__button'
-SEE_MORE_ALL_ITEMS = 'pv-profile-section__see-more-inline'
+from utils.texts import text_40_seconds
+from utils.texts import text_scraping_profile_finish
 
 
 class ScrapingProfile:
@@ -28,81 +27,108 @@ class ScrapingProfile:
         self.database = database
 
     def start(self):
+        """
+        Inicia o 'Scraping' do perfil.
+        """
         search_list = SearchDao(self.database).select_search_person_id_is_null()
         for search in search_list:
             self.driver.get(search.url_profile)
             try:
-                self.scroll_down_page(self.driver)
+                self.__scroll_down_page(self.driver)
             except JavascriptException as e:
                 log_erro(e)
-                print(f"{bcolors.WARNING}Verifique o navegador, necessário ação humana, você tem {bcolors.BOLD}40 segundos{bcolors.ENDC}...{bcolors.ENDC}")
+                print(text_40_seconds)
                 sleep(40)
                 self.driver.get(search.url)
-                self.scroll_down_page(self.driver)
-            self.open_sections(self.driver)
-            person = self.get_person(self.driver, search.url_profile)
-            self.save_database(person)
-        print(f"\n{bcolors.GREEN}Data Scraping FINISH!!!{bcolors.ENDC}")
+                self.__scroll_down_page(self.driver)
+            self.__open_sections(self.driver)
+            person = self.__get_person(self.driver, search.url_profile)
+            self.__save_database(person)
+        print(text_scraping_profile_finish)
 
-    def save_database(self, person):
-        person_id = PersonDao(database=database, person=person).insert()
+    def __save_database(self, person):
+        """
+        Salva o perfil no banco de dados.
+        """
+        person_id = PersonDao(database=self.database, person=person).insert()
         if person_id:
             SearchDao(self.database).update_search_person_id(person_id, person.url)
             print(f"({person_id}) {bcolors.BOLD}{person.name}{bcolors.ENDC} {bcolors.BOLD}{bcolors.GREEN}CADASTRADO{bcolors.ENDC}{bcolors.ENDC}: {person.url}")
 
-    def open_sections(self, driver):
-        self.get_open_about(driver)
-        self.get_open_experience(driver)
-        self.get_open_certifications(driver)
-        self.get_open_accomplishments(driver)
-        self.get_open_skill(driver)
+    def __open_sections(self, driver):
+        """
+        Abre todas as seções do perfil do Linkedin.
+        """
+        self.__get_open_about(driver)
+        self.__get_open_experience(driver)
+        self.__get_open_certifications(driver)
+        self.__get_open_accomplishments(driver)
+        self.__get_open_skill(driver)
 
-    def get_open_about(self, driver):
+    def __get_open_about(self, driver):
+        """
+        Abre a seção 'Sobre' do perfil do Linkedin.
+        """
         try:
             about_section = driver.find_element_by_class_name('pv-about-section')
-            list_see_more_about = about_section.find_elements_by_class_name(SEE_MORE_ITEM)
-            self.click_list(driver, list_see_more_about, about_section)
+            list_see_more_about = about_section.find_elements_by_class_name('inline-show-more-text__button')
+            self.__click_list(driver, list_see_more_about, about_section)
         except NoSuchElementException as e:
             log_erro(e)
 
-    def get_open_experience(self, driver):
+    def __get_open_experience(self, driver):
+        """
+        Abre a seção 'Experiência' do perfil do Linkedin.
+        """
         try:
             experience_section = driver.find_element_by_id('experience-section')
-            list_all_see_more_experience = experience_section.find_elements_by_class_name(SEE_MORE_ALL_ITEMS)
-            self.click_list(driver, list_all_see_more_experience, experience_section)
-            list_item_see_more_experience = experience_section.find_elements_by_class_name(SEE_MORE_ITEM)
-            self.click_list(driver, list_item_see_more_experience, experience_section)
+            list_all_see_more_experience = experience_section.find_elements_by_class_name('pv-profile-section__see-more-inline')
+            self.__click_list(driver, list_all_see_more_experience, experience_section)
+            list_item_see_more_experience = experience_section.find_elements_by_class_name('inline-show-more-text__button')
+            self.__click_list(driver, list_item_see_more_experience, experience_section)
         except NoSuchElementException as e:
             log_erro(e)
 
-    def get_open_certifications(self, driver):
+    def __get_open_certifications(self, driver):
+        """
+        Abre a seção 'Certificações' do perfil do Linkedin.
+        """
         try:
             certifications_section = driver.find_element_by_id('certifications-section')
-            list_all_see_more_certifications = certifications_section.find_elements_by_class_name(SEE_MORE_ALL_ITEMS)
-            self.click_list(driver, list_all_see_more_certifications, certifications_section)
+            list_all_see_more_certifications = certifications_section.find_elements_by_class_name('pv-profile-section__see-more-inline')
+            self.__click_list(driver, list_all_see_more_certifications, certifications_section)
         except NoSuchElementException as e:
             log_erro(e)
 
-    def get_open_accomplishments(self, driver):
+    def __get_open_accomplishments(self, driver):
+        """
+        Abre a seção 'Conquistas' do perfil do Linkedin.
+        """
         try:
             accomplishments_section = driver.find_element_by_class_name('pv-accomplishments-section')
             accomplishments_language_section = accomplishments_section.find_element_by_class_name('languages')
             list_all_see_more_accomplishments = accomplishments_language_section.find_elements_by_class_name(
                 'pv-accomplishments-block__expand')
-            self.click_list(driver, list_all_see_more_accomplishments, accomplishments_language_section)
+            self.__click_list(driver, list_all_see_more_accomplishments, accomplishments_language_section)
         except NoSuchElementException as e:
             log_erro(e)
 
-    def get_open_skill(self, driver):
+    def __get_open_skill(self, driver):
+        """
+        Abre a seção 'Habilidades' do perfil do Linkedin.
+        """
         try:
             skill_section = driver.find_element_by_class_name('pv-skill-categories-section')
             list_skill_section_see_more = skill_section.find_elements_by_class_name(
                 'pv-profile-section__card-action-bar')
-            self.click_list(driver, list_skill_section_see_more, skill_section)
+            self.__click_list(driver, list_skill_section_see_more, skill_section)
         except NoSuchElementException as e:
             log_erro(e)
 
-    def click_list(self, driver, items, element, is_except=False):
+    def __click_list(self, driver, items, element, is_except=False):
+        """
+        Clica em cada item da seção.
+        """
         for item in items:
             try:
                 if not is_except:
@@ -112,24 +138,30 @@ class ScrapingProfile:
                 log_erro(e)
                 if not is_except:
                     driver.execute_script("window.scrollTo(0, {});".format(element.location['y'] - 100))
-                    self.click_list(driver, items, element, True)
+                    self.__click_list(driver, items, element, True)
 
-    def scroll_down_page(self, driver, speed=8):
+    def __scroll_down_page(self, driver, speed=8):
+        """
+        Faz o Scroll até o final da pagina para carregar todos os componentes.
+        """
         current_scroll_position, new_height = 0, 1
         while current_scroll_position <= new_height:
             current_scroll_position += speed
             driver.execute_script("window.scrollTo(0, {});".format(current_scroll_position))
             new_height = driver.execute_script("return document.body.scrollHeight")
 
-    def get_person(self, driver, url_profile):
+    def __get_person(self, driver, url_profile):
+        """
+        Pega todos os dados do perfil.
+        """
         html_page = driver.page_source
         soup = BeautifulSoup(html_page, 'html.parser')
-        person = self.get_main_info(driver, soup, url_profile)
-        experiences = self.get_experiences(soup)
-        certifications = self.get_certifications(soup)
-        education = self.get_education(soup)
-        languages = self.get_languages(soup)
-        skills = self.get_skills(soup)
+        person = self.__get_main_info(driver, soup, url_profile)
+        experiences = self.__get_experiences(soup)
+        certifications = self.__get_certifications(soup)
+        education = self.__get_education(soup)
+        languages = self.__get_languages(soup)
+        skills = self.__get_skills(soup)
         person.experiences = experiences
         person.certifications = certifications
         person.education = education
@@ -137,17 +169,23 @@ class ScrapingProfile:
         person.skills = skills
         return person
 
-    def get_main_info(self, driver, soup, url_profile):
+    def __get_main_info(self, driver, soup, url_profile):
+        """
+        Pega os dados de informações principais do perfil.
+        """
         container_main = soup.find('section', {'class': ['pv-top-card']})
         name = container_main.find('h1', {'class': ['text-heading-xlarge']}).text.strip()
         subtitle = container_main.find('div', {'class': ['text-body-medium']}).text.strip()
         local = container_main.find('span',
                                     {'class': ['text-body-small inline t-black--light break-words']}).text.strip()
-        about = self.get_about(soup)
-        phone, email = self.get_contact(driver, url_profile)
+        about = self.__get_about(soup)
+        phone, email = self.__get_contact(driver, url_profile)
         return Person(name=name, subtitle=subtitle, local=local, about=about, phone_number=phone, email=email, url=url_profile)
 
-    def get_contact(self, driver, url_profile):
+    def __get_contact(self, driver, url_profile):
+        """
+        Pega os dados de contato do perfil.
+        """
         email = None
         phone = None
         driver.execute_script("window.open('{}detail/contact-info/')".format(url_profile))
@@ -165,22 +203,31 @@ class ScrapingProfile:
         driver.switch_to.window(driver.window_handles[0])
         return phone, email
 
-    def get_about(self, soup):
+    def __get_about(self, soup):
+        """
+        Pega os dados do campo sobre do perfil.
+        """
         container_about = soup.find('section', {'class': ['pv-about-section']})
         about = container_about.find('div', {'class': ['inline-show-more-text']})
         about = about.text.strip() if about else None
         return about
 
-    def get_experiences(self, soup):
+    def __get_experiences(self, soup):
+        """
+        Pega todos os dados de experiência do perfil.
+        """
         experiences = list()
         container_experience = soup.find('section', {'class': ['experience-section']})
         if container_experience:
             children = container_experience.findAll('li', {'class': ['pv-entity__position-group-pager']})
             for li in children:
-                experiences.append(self.get_data_experience(li))
+                experiences.append(self.__get_data_experience(li))
         return experiences
 
-    def get_data_experience(self, li):
+    def __get_data_experience(self, li):
+        """
+        Pega os dados de cada experiência individualmente do perfil.
+        """
         descricao_list = list()
         empresa_list = list()
         tempo_list = list()
@@ -189,11 +236,11 @@ class ScrapingProfile:
         career = li.findAll('li', {'class': ['pv-entity__position-group-role-item']})
 
         if career:
-            empresa_list, descricao_list = self.get_data_description_career_experience(descricao_list, empresa_list, li, career)
+            empresa_list, descricao_list = self.__get_data_description_career_experience(descricao_list, empresa_list, li, career)
         else:
-            empresa_list, descricao_list = self.get_data_description_experience(descricao_list, empresa_list, li)
-        tempo_list = self.get_data_time_experience(li, tempo_list)
-        cargo_list = self.get_data_cargo_experience(li, cargo_list, tempo_list)
+            empresa_list, descricao_list = self.__get_data_description_experience(descricao_list, empresa_list, li)
+        tempo_list = self.__get_data_time_experience(li, tempo_list)
+        cargo_list = self.__get_data_cargo_experience(li, cargo_list, tempo_list)
 
         for item in list(itertools.zip_longest(empresa_list, cargo_list, tempo_list, descricao_list)):
             anos = item[2].get("anos") if item[2] else 0
@@ -203,7 +250,10 @@ class ScrapingProfile:
             )
         return experience_list
 
-    def get_data_description_career_experience(self, descricao_list, empresa_list, li, career):
+    def __get_data_description_career_experience(self, descricao_list, empresa_list, li, career):
+        """
+        Pega informações sobre experiência caso tenha 'carreira' na empresa.
+        """
         for item in career:
             try:
                 empresa = li.find('div', {'class': ['pv-entity__company-summary-info']}).findAll(
@@ -219,7 +269,10 @@ class ScrapingProfile:
                 descricao_list.append(None)
         return empresa_list, descricao_list
 
-    def get_data_description_experience(self, descricao_list, empresa_list, li):
+    def __get_data_description_experience(self, descricao_list, empresa_list, li):
+        """
+        Pega informações sobre experiência na empresa.
+        """
         try:
             empresa = li.find('p', {'class': ['pv-entity__secondary-title']})
             if empresa.find('span', {'class': ['separator']}):
@@ -237,7 +290,10 @@ class ScrapingProfile:
             log_erro(e)
         return empresa_list, descricao_list
 
-    def get_data_time_experience(self, li, tempo_list):
+    def __get_data_time_experience(self, li, tempo_list):
+        """
+        Pega o tempo de experiência na empresa
+        """
         tempo = li.findAll('span', {'class': ['pv-entity__bullet-item-v2']})
         for item in tempo:
             if item.text == "menos de um ano":
@@ -254,14 +310,20 @@ class ScrapingProfile:
             tempo_list.append(tempo_dict)
         return tempo_list
 
-    def get_data_cargo_experience(self, li, cargo_list, tempo_list):
+    def __get_data_cargo_experience(self, li, cargo_list, tempo_list):
+        """
+        Pega o cargo na empresa
+        """
         class_css = 't-14 t-black t-bold' if len(tempo_list) > 1 else 't-16 t-black t-bold'
         cargo = li.findAll('h3', {'class': [class_css]})
         for item in cargo:
             cargo_list.append(item.text.replace("Cargo\n", "").strip() if item else None)
         return cargo_list
 
-    def get_certifications(self, soup):
+    def __get_certifications(self, soup):
+        """
+        Pega as certificações.
+        """
         certifications = list()
         container_certifications = soup.find('section', {'id': ['certifications-section']})
         if container_certifications:
@@ -271,7 +333,10 @@ class ScrapingProfile:
                 certifications.append(Certification(title))
         return certifications
 
-    def get_education(self, soup):
+    def __get_education(self, soup):
+        """
+        Pega dados de escolaridade.
+        """
         education_list = list()
         container_education = soup.find('section', {'id': ['education-section']})
         if container_education:
@@ -289,7 +354,10 @@ class ScrapingProfile:
                 education_list.append(Education(college=college, level=level, course=course))
         return education_list
 
-    def get_languages(self, soup):
+    def __get_languages(self, soup):
+        """
+        Pega dados de idiomas e nível.
+        """
         languages = list()
         container_accomplishments = soup.find('div', {'id': ['languages-expandable-content']})
         if container_accomplishments:
@@ -301,7 +369,10 @@ class ScrapingProfile:
                 languages.append(Language(idioma, nivel))
         return languages
 
-    def get_skills(self, soup):
+    def __get_skills(self, soup):
+        """
+        Pega dados de habilidades com idicações e selo do Linkedin.
+        """
         skills = list()
         container_skill = soup.find('section', {'class': ['pv-skill-categories-section']})
         if container_skill:

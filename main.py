@@ -9,6 +9,8 @@ from selenium.webdriver.chrome.options import Options
 
 from config import *
 from database.Database import Database
+from database.dao.PersonDao import PersonDao
+from database.dao.SearchDao import SearchDao
 from scraping.ScoreProfile import ScoreProfile
 from scraping.ScrapingProfile import ScrapingProfile
 from scraping.ScrapingSearch import ScrapingSearch
@@ -18,21 +20,28 @@ database = Database()
 
 
 def main():
+    """
+    Iniciar aplicação...
+    """
     print(text_logo)
-    create_directory()
+    __create_directory()
     database.create_tables_if_not_exists()
-    driver = config()
+    driver = __config()
     print(text_waiting_login)
     winsound.Beep(250, 100)
-    login(driver)
+    __login(driver)
     winsound.Beep(500, 100)
-    choose(driver)
+    __choose(driver)
 
 
-def login(driver):
+def __login(driver):
+    """
+    Inicia o Login do Linkedin, caso esteja com 'DEBUG=True', é usado o valor de login e senha na variável de ambiente,
+    se não, o processo é manual.
+    """
     result = False
     if DEBUG:
-        login_debug(driver)
+        __login_debug(driver)
         result = True
     else:
         option = input(text_login)
@@ -40,18 +49,18 @@ def login(driver):
             result = True
         elif option.lower() == 'n':
             result = False
-            close(driver)
+            __close(driver)
         else:
             print(text_login_error)
-            login(driver)
+            __login(driver)
     if result and driver.current_url != URL_LOGIN:
         return result
     else:
         print(text_login_its_a_trap)
-        login(driver)
+        __login(driver)
 
 
-def create_directory():
+def __create_directory():
     """
     Cria o diretório principal
     """
@@ -60,11 +69,11 @@ def create_directory():
     directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
     if not os.path.exists(directory_main):
         os.mkdir(directory_main)
-    create_directory_export(path_absolute, directory_main)
-    create_directory_logs(path_absolute, directory_main)
+    __create_directory_export(path_absolute, directory_main)
+    __create_directory_logs(path_absolute, directory_main)
 
 
-def create_directory_export(path_absolute, directory_main):
+def __create_directory_export(path_absolute, directory_main):
     """
     Cria o diretório de arquivos exportados
     """
@@ -74,7 +83,7 @@ def create_directory_export(path_absolute, directory_main):
         os.mkdir(directory_export)
 
 
-def create_directory_logs(path_absolute, directory_main):
+def __create_directory_logs(path_absolute, directory_main):
     """
     Cria o diretório de LOGS
     """
@@ -84,55 +93,138 @@ def create_directory_logs(path_absolute, directory_main):
         os.mkdir(directory_logs)
 
 
-def choose(driver):
+def __choose(driver):
+    """
+    Inicia o menu com as opções de scraping para 'Search', 'Person' e exportação para XLS.
+    """
     try:
         option = input(text_option)
         option = int(option)
         if option == SEARCH_PROFILES:
-            search(driver)
+            __search(driver)
         if option == SCRAPING_PROFILES:
-            profile(driver)
+            __start_scraping_profiles(driver)
         if option == SCORE_AND_EXPORT:
-            score_and_export(driver)
+            __start_score_and_export(driver)
         if option == ALL_OPTIONS:
-            search(driver)
-            profile(driver)
-            score_and_export(driver)
+            __start_score_all_option(driver)
         if option == CLOSE_APP:
-            close(driver)
+            __close(driver)
     except ValueError as e:
         print(text_error)
-        choose(driver)
+        __choose(driver)
 
 
-def close(driver):
+def __start_scraping_profiles(driver):
+    """
+    Verifica se existe registro em 'Search', caso sim, faz o procedimento de Scraping em 'Profile'.
+    """
+    if __verify_search():
+        __profile(driver)
+    else:
+        print(text_error_search)
+        __choose(driver)
+
+
+def __start_score_and_export(driver):
+    """
+    Verifica se existe registro, caso sim, exporta os dados.
+    """
+    if __print_error_verify():
+        __score_and_export(driver)
+    else:
+        __choose(driver)
+
+
+def __start_score_all_option(driver):
+    """
+    Verifica se existe registro, caso sim, faz o procedimento de Scraping em 'Search', 'Person' e exporta os dados.
+    """
+    if __print_error_verify():
+        __search(driver)
+        __profile(driver)
+        __score_and_export(driver)
+    else:
+        __choose(driver)
+
+
+def __print_error_verify():
+    """
+    Se não houver dados nas tabelas de 'Person' e 'Search' ou somente em 'Person' ou 'Search', retorna 'False'.
+    """
+    result = True
+    if not __verify_search() and not __verify_person():
+        print(text_error_search_and_person)
+        result = False
+    elif not __verify_search():
+        print(text_error_search)
+        result = False
+    elif not __verify_person():
+        print(text_error_person)
+        result = False
+    return result
+
+
+def __verify_search():
+    """
+    Se houver dados no banco na tabela de 'Search', retorna 'True', se não, retorna 'False'.
+    """
+    counter = SearchDao(database).search_counter()
+    if counter > 0:
+        return True
+    return False
+
+
+def __verify_person():
+    """
+    Se houver dados no banco na tabela de 'Person', retorna 'True', se não, retorna 'False'.
+    """
+    counter = PersonDao(database).person_counter()
+    if counter > 0:
+        return True
+    return False
+
+
+def __close(driver):
+    """
+    Encerra o app...
+    """
     print(text_closed)
-    music_terminator()
+    __music_terminator()
     driver.close()
     sys.exit()
 
 
-def score_and_export(driver):
+def __score_and_export(driver):
+    """
+    Inicia o cálculo ponderado e faz a exportação dos dados para XLS
+    """
     ScoreProfile(database).start()
-    choose(driver)
+    __choose(driver)
 
 
-def profile(driver):
+def __profile(driver):
+    """
+    Inicia o scraping da lista de perfis do banco de dados
+    """
     ScrapingProfile(driver, database).start()
-    choose(driver)
+    __choose(driver)
 
 
-def search(driver):
+def __search(driver):
+    """
+    Inicia o menu para add a URL do filtro de pessoas para iniciar o Scraping da lista de perfis
+    """
     winsound.Beep(250, 100)
     url_filter = input(text_url_filter)
     try:
         ScrapingSearch(url_filter, database, driver).start()
     except InvalidArgumentException as e:
         print(e)
-    choose(driver)
+    __choose(driver)
 
 
-def config():
+def __config():
     """
     Configuração inicial para o navegador Chrome.
     """
@@ -144,7 +236,7 @@ def config():
     return driver
 
 
-def login_debug(driver):
+def __login_debug(driver):
     """
     Usado quando estiver em modo Debug, agilizando o Login
     """
@@ -158,8 +250,9 @@ def login_debug(driver):
     log_in_button.click()
 
 
-def music_terminator():
+def __music_terminator():
     """
+    Music Terminator ♪ ♫ ♬
     =D Yeahhh!
     """
     winsound.Beep(80, 390)

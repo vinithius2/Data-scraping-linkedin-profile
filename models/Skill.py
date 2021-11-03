@@ -1,8 +1,8 @@
 class Skill:
-    def __init__(self, titulo, indications, verify):
-        self.titulo = titulo
+    def __init__(self, title, indications, verify):
+        self.title = title
         self.indications = indications
         self.verify = verify
 
     def __str__(self):
-        return "Skill: {} {} {}".format(self.titulo, self.indications, self.verify)
+        return "Skill: {} {} {}".format(self.title, self.indications, self.verify)

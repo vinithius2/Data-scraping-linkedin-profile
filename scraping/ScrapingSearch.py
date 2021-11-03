@@ -1,4 +1,5 @@
-import datetime
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import NoSuchElementException
@@ -10,6 +11,8 @@ from database.dao.SearchDao import SearchDao
 from models.Search import Search
 from utils.bcolors import bcolors
 from utils.log_erro import log_erro
+from utils.texts import text_out_of_your_network
+from utils.texts import text_scraping_search_finish
 
 
 class ScrapingSearch:
@@ -19,16 +22,33 @@ class ScrapingSearch:
         self.driver = driver
 
     def start(self):
+        """
+        Iniciar o scraping search...
+        """
         self.driver.get(self.url_filter)
-        self.search()
-        print(f"\n{bcolors.GREEN}Data Scraping list profiles FINISH!!!{bcolors.ENDC}")
+        captured_value = self.__get_keywords(self.url_filter)
+        self.__search(captured_value)
+        print(text_scraping_search_finish)
 
-    def search(self, count=0):
-        element = self.wait_element_by_css_class('reusable-search__result-container')
-        self.scroll_down_page(self.driver)
+    def __get_keywords(self, url_filter):
+        """
+        Captura as palavras usadas no filtro
+        """
+        parsed_url = urlparse(url_filter)
+        captured_value = None
+        if "keywords" in parse_qs(parsed_url.query).keys():
+            captured_value = parse_qs(parsed_url.query)["keywords"][0]
+        return captured_value
+
+    def __search(self, captured_value, count=0):
+        """
+        Iniciar o scraping search...
+        """
+        element = self.__wait_element_by_css_class('reusable-search__result-container')
+        self.__scroll_down_page(self.driver)
         html_page = self.driver.page_source
         soup = BeautifulSoup(html_page, 'html.parser')
-        disable = self.page(soup)
+        disable = self.__page(soup)
 
         if element.is_displayed():
             profile_list = soup.findAll('li', {'class': ['reusable-search__result-container']})
@@ -42,18 +62,25 @@ class ScrapingSearch:
                         name = profile.find('span').text.strip()
                         count = count + 1
                         print(f"({count}) {bcolors.BOLD}{name}{bcolors.ENDC} - {url_profile}")
-                        SearchDao(self.database, Search(self.url_filter, url_profile)).insert_search()
+                        SearchDao(self.database, Search(
+                                    url_filter=self.url_filter,
+                                    url_profile=url_profile,
+                                    text_filter=captured_value
+                                )).insert_search()
                     else:
-                        print(f"{bcolors.RED}{bcolors.BOLD}[NÃO CADASTRADO]{bcolors.ENDC} Usuário fora da sua rede...{bcolors.ENDC} - {url_profile}")
-                self.click_next(disable, count)
+                        print(f"{text_out_of_your_network} - {url_profile}")
+                self.__click_next(disable, count)
             except NoSuchElementException as e:
                 log_erro(e)
             except AttributeError as e:
                 log_erro(e)
 
-    def page(self, soup):
+    def __page(self, soup):
+        """
+        Verifica se o botão da paginação está desabilitado ou não para seguir a próxima página.
+        """
         disable = False
-        element = self.wait_element_by_css_class('artdeco-pagination')
+        element = self.__wait_element_by_css_class('artdeco-pagination')
         if element.is_displayed():
             container_pages = soup.find('div', {'class': ['artdeco-pagination']})
             if container_pages:
@@ -64,25 +91,28 @@ class ScrapingSearch:
                 print(f"\n{bcolors.HEADER}#### PAGE {page_number} ####{bcolors.ENDC}\n")
         return disable
 
-    def wait_element_by_css_class(self, css_class, timeout=40):
+    def __wait_element_by_css_class(self, css_class, timeout=40):
+        """
+        Aguarda o respectivo elemento da classe CSS carregar.
+        """
         return WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, css_class)))
 
-    def click_next(self, disable, count):
-        self.scroll_down_page(self.driver)
+    def __click_next(self, disable, count):
+        """
+        Clica no botão NEXT caso exista para seguir para a próxima página.
+        """
+        self.__scroll_down_page(self.driver)
         if not disable:
             button_next = self.driver.find_element_by_class_name('artdeco-pagination__button--next')
             button_next.click()
-            self.search(count)
+            self.__search(count)
 
-    def scroll_down_page(self, driver, speed=8):
+    def __scroll_down_page(self, driver, speed=8):
+        """
+        Faz o Scroll até o final da pagina para carregar todos os componentes.
+        """
         current_scroll_position, new_height = 0, 1
         while current_scroll_position <= new_height:
             current_scroll_position += speed
             driver.execute_script("window.scrollTo(0, {});".format(current_scroll_position))
             new_height = driver.execute_script("return document.body.scrollHeight")
-
-    def print_erro(self, e, msg="ERRO"):
-        now = datetime.datetime.now()
-        f = open(f"../{now.strftime('%d_%m_%Y')}.txt", "a")
-        f.write("[{}] {}".format(str(now), e))
-        f.close()

@@ -15,17 +15,25 @@ class PersonDao:
         self.database = database
         self.person_id = None
 
+    def person_counter(self) -> int:
+        query = """
+            SELECT COUNT(*) AS counter FROM person
+        """
+        self.database.cursor_db.execute(query)
+        rows = self.database.cursor_db.fetchall()
+        return rows[0][0]
+
     # ------ INSERT ------ #
     def insert(self):
         person_list = self.select_people_by_name()
-        exist = self.person_exist(person_list)
+        exist = self.__person_exist(person_list)
         if not exist:
             self.__insert()
         else:
             print(f"{bcolors.WARNING}Perfil {self.person.name} JÁ EXISTE registro: {self.person.url}{bcolors.ENDC}")
         return self.person_id
 
-    def person_exist(self, person_list):
+    def __person_exist(self, person_list):
         exist = False
         for person in person_list:
             if person.url == self.person.url:
@@ -56,8 +64,8 @@ class PersonDao:
         return person_id
 
     def __insert_certification(self, certification, person_id):
-        query = """INSERT INTO certification (titulo, person_id)  VALUES (?,?)"""
-        self.database.cursor_db.execute(query, [certification.titulo, person_id])
+        query = """INSERT INTO certification (title, person_id)  VALUES (?,?)"""
+        self.database.cursor_db.execute(query, [certification.title, person_id])
         self.database.connection.commit()
 
     def __insert_education(self, education, person_id):
@@ -71,18 +79,19 @@ class PersonDao:
         self.database.connection.commit()
 
     def __insert_skill(self, skill, person_id):
-        query = """INSERT INTO skill (titulo, indications, verify, person_id)  VALUES (?,?,?,?)"""
-        self.database.cursor_db.execute(query, [skill.titulo, skill.indications, skill.verify, person_id])
+        query = """INSERT INTO skill (title, indications, verify, person_id)  VALUES (?,?,?,?)"""
+        self.database.cursor_db.execute(query, [skill.title, skill.indications, skill.verify, person_id])
         self.database.connection.commit()
 
     def __insert_experience(self, experience, person_id):
-        query = """INSERT INTO experience (empresa, cargo, anos, meses, descricao, person_id)  VALUES (?,?,?,?,?,?)"""
+        query = """INSERT INTO experience (company, position, years, months, description, person_id)  VALUES (?,?,?,
+        ?,?,?) """
         self.database.cursor_db.execute(query, [
-                experience.empresa,
-                experience.cargo,
-                experience.anos,
-                experience.meses,
-                experience.descricao,
+                experience.company,
+                experience.position,
+                experience.years,
+                experience.months,
+                experience.description,
                 person_id
             ]
         )
@@ -166,12 +175,12 @@ class PersonDao:
     def __select_certification(self, person_id):
         certification_list = list()
         query = """
-            SELECT id, titulo, person_id FROM certification WHERE ? = person_id 
+            SELECT id, title, person_id FROM certification WHERE ? = person_id 
         """
         self.database.cursor_db.execute(query, [person_id])
         rows = self.database.cursor_db.fetchall()
         for row in rows:
-            certification_list.append(Certification(titulo=row[1]))
+            certification_list.append(Certification(title=row[1]))
         return certification_list
 
     def __select_language(self, person_id):
@@ -182,25 +191,25 @@ class PersonDao:
         self.database.cursor_db.execute(query, [person_id])
         rows = self.database.cursor_db.fetchall()
         for row in rows:
-            language_list.append(Language(idioma=row[1], nivel=row[2]))
+            language_list.append(Language(language=row[1], level=row[2]))
         return language_list
 
     def __select_skill(self, person_id):
         skill_list = list()
         query = """
-            SELECT id, titulo, indications, verify, person_id person_id FROM skill WHERE ? = person_id 
+            SELECT id, title, indications, verify, person_id person_id FROM skill WHERE ? = person_id 
         """
         self.database.cursor_db.execute(query, [person_id])
         rows = self.database.cursor_db.fetchall()
         for row in rows:
             verify = True if row[3] == 1 else False
-            skill_list.append(Skill(titulo=row[1], indications=row[2], verify=verify))
+            skill_list.append(Skill(title=row[1], indications=row[2], verify=verify))
         return skill_list
 
     def __select_experience(self, person_id):
         experience_list = list()
         query = """
-            SELECT id, empresa, cargo, anos, meses, descricao, person_id FROM experience WHERE ? = person_id 
+            SELECT id, company, position, years, months, description, person_id FROM experience WHERE ? = person_id 
         """
         self.database.cursor_db.execute(query, [person_id])
         rows = self.database.cursor_db.fetchall()
@@ -209,11 +218,11 @@ class PersonDao:
             for row in group:
                 experience_group.append(
                     Experience(
-                        empresa=row[1],
-                        cargo=row[2],
-                        anos=row[3],
-                        meses=row[4],
-                        descricao=row[5]
+                        company=row[1],
+                        position=row[2],
+                        years=row[3],
+                        months=row[4],
+                        description=row[5]
                     )
                 )
             experience_list.append(experience_group)

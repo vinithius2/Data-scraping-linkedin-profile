@@ -1,0 +1,8 @@
+DEBUG = True
+URL_LOGIN = 'https://www.linkedin.com/uas/login'
+SEARCH_PROFILES = 1
+SCRAPING_PROFILES = 2
+SCORE_AND_EXPORT = 3
+ALL_OPTIONS = 4
+CLOSE_APP = 5
+VERSION = 1.0

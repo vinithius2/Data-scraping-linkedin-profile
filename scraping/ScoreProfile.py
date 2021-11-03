@@ -6,14 +6,21 @@ import winsound
 from difflib import SequenceMatcher
 
 from openpyxl import Workbook
-from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
+from openpyxl.styles import Alignment
+from openpyxl.styles import Border
+from openpyxl.styles import Font
+from openpyxl.styles import PatternFill
+from openpyxl.styles import Side
 from openpyxl.utils import get_column_letter
 from unidecode import unidecode
 
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
 from utils.bcolors import bcolors
-from utils.texts import text_option_score, text_error_score
+from utils.texts import text_error
+from utils.texts import text_error_filter_only_menu
+from utils.texts import text_error_score
+from utils.texts import text_option_score
 
 
 class ScoreProfile:
@@ -84,9 +91,11 @@ class ScoreProfile:
         """
         try:
             winsound.Beep(250, 100)
+            condition_sql = self.__menu()
+            winsound.Beep(250, 100)
             option = input(text_option_score)
             self.job_characteristics["technologies"] = [opt.strip() for opt in option.split(",")]
-            list_result, search_list = self.__list_person()
+            list_result, search_list = self.__list_person(condition_sql)
             result_list = self.__weighted_calculation(list_result, search_list)
             result = sorted(result_list, key=lambda d: d['scores']['media'], reverse=True)
             self.__export(result)
@@ -95,11 +104,55 @@ class ScoreProfile:
             print(text_error_score)
             self.start()
 
-    def __list_person(self):
+    def __menu(self):
+        """
+        Inicia o menu.
+        """
+        try:
+            dict_result, text_menu = self.__create_menu()
+            option = input(text_menu)
+            option = int(option)
+            option_dict = dict_result[option]
+            return option_dict["condition_sql"]
+        except KeyError as e:
+            print(text_error_filter_only_menu)
+            self.__menu()
+        except ValueError as e:
+            print(text_error)
+            self.__menu()
+
+    def __create_menu(self):
+        """
+        Faz a criação do menu para selecionar qual pesquisa será feita a exportação para XLS.
+        """
+        search_list_menu = SearchDao(self.database).select_search_person_group_by_url_filter()
+        dict_result = dict()
+        for idx, search in enumerate(search_list_menu):
+            option_number = idx + 1
+            dict_result[option_number] = {
+                "text": f"{bcolors.BOLD}[{option_number}]{bcolors.ENDC} {bcolors.UNDERLINE}({search.datetime}){bcolors.ENDC} - {search.text_filter}\n",
+                "condition_sql": search.url_filter
+            }
+        number = len(dict_result.keys())
+        dict_result[number] = {
+            "text": f"{bcolors.BOLD}[{number}]{bcolors.ENDC} Export all database records.\n",
+            "condition_sql": None
+        }
+        text_menu = f"    {bcolors.HEADER}########## Please choose your NUMBER option: ##########{bcolors.ENDC}\n"
+        for value in dict_result.values():
+            text_menu = text_menu + f"    {value['text']}"
+        text_menu = text_menu + f"    {bcolors.HEADER}#######################################################{bcolors.ENDC}\n"
+        text_menu = text_menu + f"    {bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}"
+        return dict_result, text_menu
+
+    def __list_person(self, condition_sql):
         """
         Baseado no filtro que é retornado, traz todos os perfis necessários.
         """
-        search_list = SearchDao(self.database).select_search_person_id_is_not_null()
+        if condition_sql:
+            search_list = SearchDao(self.database).select_search_by_url_filter(condition_sql)
+        else:
+            search_list = SearchDao(self.database).select_search_person_id_is_not_null()
         list_result = list()
         for search in search_list:
             list_result.append(PersonDao(database=self.database).select_people_by_id(search.person_id))
@@ -826,18 +879,18 @@ class ScoreProfile:
         for education in person.education:
             if education.level:
                 result = {
-                    self.MESTRADO: self.similarity(education.level.lower(), self.MESTRADO),
-                    self.DOUTORADO: self.similarity(education.level.lower(), self.DOUTORADO),
-                    self.POS_GRADUACAO: max(self.similarity(education.level.lower(), self.POS_GRADUACAO),
-                                            self.similarity(education.level.lower(), self.POS),
-                                            self.similarity(education.level.lower(), self.ESPECIALIZACAO)
+                    self.MESTRADO: self.__similarity(education.level.lower(), self.MESTRADO),
+                    self.DOUTORADO: self.__similarity(education.level.lower(), self.DOUTORADO),
+                    self.POS_GRADUACAO: max(self.__similarity(education.level.lower(), self.POS_GRADUACAO),
+                                            self.__similarity(education.level.lower(), self.POS),
+                                            self.__similarity(education.level.lower(), self.ESPECIALIZACAO)
                                             ),
-                    self.GRADUACAO: max(self.similarity(education.level.lower(), self.GRADUACAO),
-                                        self.similarity(education.level.lower(), self.GRADUADO),
-                                        self.similarity(education.level.lower(), self.BACHAREL),
-                                        self.similarity(education.level.lower(), self.BACHARELADO),
+                    self.GRADUACAO: max(self.__similarity(education.level.lower(), self.GRADUACAO),
+                                        self.__similarity(education.level.lower(), self.GRADUADO),
+                                        self.__similarity(education.level.lower(), self.BACHAREL),
+                                        self.__similarity(education.level.lower(), self.BACHARELADO),
                                         ),
-                    self.TECNOLOGO: self.similarity(education.level.lower(), self.TECNOLOGO)
+                    self.TECNOLOGO: self.__similarity(education.level.lower(), self.TECNOLOGO)
                 }
                 key_max_value = max(result, key=result.get)
                 all_values = result.values()
@@ -921,7 +974,7 @@ class ScoreProfile:
             return True
         return False
 
-    def similarity(self, text_db, text_static):
+    def __similarity(self, text_db, text_static):
         """
         Verifica se tem string com similaridade e retorna a porcentagem de acerto
         """

@@ -5,7 +5,7 @@ from pathlib import Path
 
 class Database:
     def __init__(self):
-        self.path = self.create_directory()
+        self.path = self.__create_directory()
         self.connection = sqlite3.connect(os.path.join(self.path, 'database.db'))
         self.cursor_db = self.connection.cursor()
 
@@ -17,16 +17,16 @@ class Database:
             cls._instances[cls] = instance
         return cls._instances[cls]
 
-    def create_directory(self):
+    def __create_directory(self):
         path_parent = "scrapingLinkedinProfiles"
         path_absolute = Path("/")
         directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
         if not os.path.exists(directory_main):
             os.mkdir(directory_main)
-        directory_database = self.create_directory_database(path_absolute, directory_main)
+        directory_database = self.__create_directory_database(path_absolute, directory_main)
         return directory_database
 
-    def create_directory_database(self, path_absolute, directory_main):
+    def __create_directory_database(self, path_absolute, directory_main):
         path_parent_database = os.path.join(directory_main, "database")
         directory_database = os.path.join(path_absolute.parent.absolute(), path_parent_database)
         if not os.path.exists(directory_database):
@@ -34,46 +34,46 @@ class Database:
         return directory_database
 
     def create_tables_if_not_exists(self):
-        self.create_table_person()
-        self.create_table_experience()
-        self.create_table_certification()
-        self.create_table_education()
-        self.create_table_language()
-        self.create_table_skill()
-        self.create_table_search()
+        self.__create_table_person()
+        self.__create_table_experience()
+        self.__create_table_certification()
+        self.__create_table_education()
+        self.__create_table_language()
+        self.__create_table_skill()
+        self.__create_table_search()
 
-    def create_table_person(self):
+    def __create_table_person(self):
         query = """CREATE TABLE IF NOT EXISTS person (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, subtitle TEXT, 
         local TEXT, url TEXT, email TEXT, phone_number TEXT, about TEXT)"""
         self.cursor_db.execute(query)
 
-    def create_table_experience(self):
-        query = """CREATE TABLE IF NOT EXISTS experience (id INTEGER PRIMARY KEY AUTOINCREMENT, empresa TEXT, 
-        cargo TEXT, anos NUMBER, meses NUMBER, descricao TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES 
+    def __create_table_experience(self):
+        query = """CREATE TABLE IF NOT EXISTS experience (id INTEGER PRIMARY KEY AUTOINCREMENT, company TEXT, 
+        position TEXT, years NUMBER, months NUMBER, description TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES 
         person(id)) """
         self.cursor_db.execute(query)
 
-    def create_table_education(self):
+    def __create_table_education(self):
         query = """CREATE TABLE IF NOT EXISTS education (id INTEGER PRIMARY KEY AUTOINCREMENT, college TEXT, 
         level TEXT, course TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)
 
-    def create_table_certification(self):
-        query = """CREATE TABLE IF NOT EXISTS certification (id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT,
+    def __create_table_certification(self):
+        query = """CREATE TABLE IF NOT EXISTS certification (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT,
         person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)
 
-    def create_table_language(self):
-        query = """CREATE TABLE IF NOT EXISTS language (id INTEGER PRIMARY KEY AUTOINCREMENT, idioma TEXT, nivel TEXT, 
+    def __create_table_language(self):
+        query = """CREATE TABLE IF NOT EXISTS language (id INTEGER PRIMARY KEY AUTOINCREMENT, language TEXT, level TEXT, 
         person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)
 
-    def create_table_skill(self):
-        query = """CREATE TABLE IF NOT EXISTS skill (id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT, 
+    def __create_table_skill(self):
+        query = """CREATE TABLE IF NOT EXISTS skill (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, 
         indications NUMBER, verify INTEGER, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)
 
-    def create_table_search(self):
+    def __create_table_search(self):
         query = """CREATE TABLE IF NOT EXISTS search (id INTEGER PRIMARY KEY AUTOINCREMENT, url_filter TEXT, 
-        url_profile TEXT, datetime TEXT, person_id INTEGER, score REAL, FOREIGN KEY(person_id) REFERENCES person(id))"""
+        url_profile TEXT, datetime TEXT, person_id INTEGER, text_filter TEXT, FOREIGN KEY(person_id) REFERENCES person(id))"""
         self.cursor_db.execute(query)

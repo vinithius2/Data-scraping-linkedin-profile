@@ -66,6 +66,47 @@ text_error = f"""\n
     {bcolors.ENDC}
     """
 
+text_error_search = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
+    {bcolors.UNDERLINE}You need to choose option number (1) to have a list for the survey...!{bcolors.ENDC}
+    {bcolors.HEADER}###########################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
+text_out_of_your_network = f"{bcolors.RED}{bcolors.BOLD}[NÃO CADASTRADO]{bcolors.ENDC} Usuário fora da sua rede...{bcolors.ENDC}"
+
+text_scraping_search_finish = f"\n{bcolors.GREEN}Data Scraping list profiles FINISH!!!{bcolors.ENDC}"
+
+text_scraping_profile_finish = f"\n{bcolors.GREEN}Data Scraping FINISH!!!{bcolors.ENDC}"
+
+text_40_seconds = f"{bcolors.WARNING}Verifique o navegador, necessário ação humana, você tem {bcolors.BOLD}40 segundos{bcolors.ENDC}...{bcolors.ENDC}"
+
+text_error_person = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
+    {bcolors.UNDERLINE}You need to choose option number (2) to have Linkedin profiles to export information...!{bcolors.ENDC}
+    {bcolors.HEADER}###########################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
+text_error_search_and_person = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
+    {bcolors.UNDERLINE}You need to choose option number (1) to have a list for the survey and after choose option number (2) to have Linkedin profiles to export information...!{bcolors.ENDC}
+    {bcolors.HEADER}###########################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
+text_error_filter_only_menu = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
+    {bcolors.UNDERLINE}Choose only the option available in the menu!{bcolors.ENDC}
+    {bcolors.BOLD}Ex:{bcolors.ENDC} 1, 2, 3, 4 or 5...
+    {bcolors.HEADER}###########################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
 text_waiting_login = f"{bcolors.BOLD}{bcolors.BLUE}Waiting login...{bcolors.ENDC}{bcolors.ENDC}"
 
 text_error_score = f"""\n
