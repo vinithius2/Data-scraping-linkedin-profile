@@ -14,6 +14,7 @@ from database.dao.SearchDao import SearchDao
 from scraping.ScoreProfile import ScoreProfile
 from scraping.ScrapingProfile import ScrapingProfile
 from scraping.ScrapingSearch import ScrapingSearch
+from utils import log_erro
 from utils.texts import *
 
 database = Database()
@@ -102,16 +103,26 @@ def __choose(driver):
         option = int(option)
         if option == SEARCH_PROFILES:
             __search(driver)
+            __choose(driver)
         if option == SCRAPING_PROFILES:
             __start_scraping_profiles(driver)
+            __choose(driver)
         if option == SCORE_AND_EXPORT:
             __start_score_and_export(driver)
+            __choose(driver)
         if option == ALL_OPTIONS:
             __start_score_all_option(driver)
+            __choose(driver)
         if option == CLOSE_APP:
             __close(driver)
     except ValueError as e:
         print(text_error)
+        __choose(driver)
+    except TimeoutError as e:
+        print(text_unknown_error)
+        __choose(driver)
+    except AttributeError as e:
+        print(text_unknown_error)
         __choose(driver)
 
 
@@ -207,8 +218,14 @@ def __profile(driver):
     """
     Inicia o scraping da lista de perfis do banco de dados
     """
-    ScrapingProfile(driver, database).start()
-    __choose(driver)
+    try:
+        ScrapingProfile(driver, database).start()
+    except InvalidArgumentException as e:
+        print(text_unknown_error)
+        __choose(driver)
+    except TimeoutError as e:
+        print(text_unknown_error)
+        __choose(driver)
 
 
 def __search(driver):
@@ -217,11 +234,18 @@ def __search(driver):
     """
     winsound.Beep(250, 100)
     url_filter = input(text_url_filter)
-    try:
-        ScrapingSearch(url_filter, database, driver).start()
-    except InvalidArgumentException as e:
-        print(e)
-    __choose(driver)
+    if URL_BASE_PEOPLE in url_filter:
+        try:
+            ScrapingSearch(url_filter, database, driver).start()
+        except InvalidArgumentException as e:
+            print(e)
+            __choose(driver)
+        except TimeoutError as e:
+            print(text_unknown_error)
+            __choose(driver)
+    else:
+        print(text_login_url_base)
+        __search(driver)
 
 
 def __config():

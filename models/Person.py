@@ -1,6 +1,7 @@
 class Person:
-    def __init__(self, name=None, subtitle=None, local=None, about=None, url=None, email=None, phone_number=None,
+    def __init__(self, id=None, name=None, subtitle=None, local=None, about=None, url=None, email=None, phone_number=None,
                  certifications=[], education=[], experiences=[], languages=[], skills=[]):
+        self.id = id
         self.name = name
         self.subtitle = subtitle
         self.local = local

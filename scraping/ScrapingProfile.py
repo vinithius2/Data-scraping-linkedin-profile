@@ -32,18 +32,22 @@ class ScrapingProfile:
         """
         search_list = SearchDao(self.database).select_search_person_id_is_null()
         for search in search_list:
-            self.driver.get(search.url_profile)
-            try:
-                self.__scroll_down_page(self.driver)
-            except JavascriptException as e:
-                log_erro(e)
-                print(text_40_seconds)
-                sleep(40)
-                self.driver.get(search.url)
-                self.__scroll_down_page(self.driver)
-            self.__open_sections(self.driver)
-            person = self.__get_person(self.driver, search.url_profile)
-            self.__save_database(person)
+            person = PersonDao(database=self.database).select_people_by_url(search.url_profile)
+            if not person:
+                self.driver.get(search.url_profile)
+                try:
+                    self.__scroll_down_page(self.driver)
+                except JavascriptException as e:
+                    log_erro(e)
+                    print(text_40_seconds)
+                    sleep(40)
+                    self.driver.get(search.url)
+                    self.__scroll_down_page(self.driver)
+                self.__open_sections(self.driver)
+                person = self.__get_person(self.driver, search.url_profile)
+                self.__save_database(person)
+            else:
+                SearchDao(self.database).update_search_person_id(person[0].id, person[0].url)
         print(text_scraping_profile_finish)
 
     def __save_database(self, person):
@@ -53,7 +57,7 @@ class ScrapingProfile:
         person_id = PersonDao(database=self.database, person=person).insert()
         if person_id:
             SearchDao(self.database).update_search_person_id(person_id, person.url)
-            print(f"({person_id}) {bcolors.BOLD}{person.name}{bcolors.ENDC} {bcolors.BOLD}{bcolors.GREEN}CADASTRADO{bcolors.ENDC}{bcolors.ENDC}: {person.url}")
+            print(f"({person_id}) {bcolors.BOLD}{person.name} {bcolors.GREEN}CADASTRADO{bcolors.ENDC}{bcolors.ENDC}: {person.url}")
 
     def __open_sections(self, driver):
         """

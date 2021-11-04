@@ -74,8 +74,8 @@ class PersonDao:
         self.database.connection.commit()
 
     def __insert_language(self, language, person_id):
-        query = """INSERT INTO language (idioma, nivel, person_id)  VALUES (?,?,?)"""
-        self.database.cursor_db.execute(query, [language.idioma, language.nivel, person_id])
+        query = """INSERT INTO language (language, level, person_id)  VALUES (?,?,?)"""
+        self.database.cursor_db.execute(query, [language.language, language.level, person_id])
         self.database.connection.commit()
 
     def __insert_skill(self, skill, person_id):
@@ -116,6 +116,15 @@ class PersonDao:
         person_list = self.__get_list_person(rows)
         return person_list
 
+    def select_people_by_url(self, url):
+        query = """
+            SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE url = ?
+        """
+        self.database.cursor_db.execute(query, [url])
+        rows = self.database.cursor_db.fetchall()
+        person_list = self.__get_list_person(rows)
+        return person_list
+
     def select_people_by_id(self, person_id):
         query = """
             SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE id = ?
@@ -145,6 +154,7 @@ class PersonDao:
             skill_list = self.__select_skill(row[0])
             experience_list = self.__select_experience(row[0])
             person_list.append(Person(
+                id=row[0],
                 name=row[1],
                 subtitle=row[2],
                 local=row[3],
@@ -186,7 +196,7 @@ class PersonDao:
     def __select_language(self, person_id):
         language_list = list()
         query = """
-            SELECT id, idioma, nivel, person_id FROM language WHERE ? = person_id 
+            SELECT id, language, level, person_id FROM language WHERE ? = person_id 
         """
         self.database.cursor_db.execute(query, [person_id])
         rows = self.database.cursor_db.fetchall()

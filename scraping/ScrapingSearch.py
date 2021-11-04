@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
+from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
 from models.Search import Search
 from utils.bcolors import bcolors
@@ -60,7 +61,7 @@ class ScrapingSearch:
                     url_profile = profile.find('a', {'class': ['app-aware-link']}).attrs['href']
                     if profile.find('span'):
                         name = profile.find('span').text.strip()
-                        count = count + 1
+                        count += 1
                         print(f"({count}) {bcolors.BOLD}{name}{bcolors.ENDC} - {url_profile}")
                         SearchDao(self.database, Search(
                                     url_filter=self.url_filter,

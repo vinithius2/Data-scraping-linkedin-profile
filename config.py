@@ -1,5 +1,6 @@
 DEBUG = True
 URL_LOGIN = 'https://www.linkedin.com/uas/login'
+URL_BASE_PEOPLE = 'https://www.linkedin.com/search/results/people/'
 SEARCH_PROFILES = 1
 SCRAPING_PROFILES = 2
 SCORE_AND_EXPORT = 3

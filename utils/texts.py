@@ -66,6 +66,14 @@ text_error = f"""\n
     {bcolors.ENDC}
     """
 
+text_unknown_error = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
+    {bcolors.FAIL}Unknown error! =({bcolors.ENDC}
+    {bcolors.HEADER}###########################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
 text_error_search = f"""\n
     {bcolors.FAIL}
     {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
@@ -142,6 +150,15 @@ text_login_its_a_trap = f"""\n
     {bcolors.FAIL}
     {bcolors.HEADER}######################## ATTEMTION ########################{bcolors.ENDC}
     {bcolors.UNDERLINE}You need to login to Linkedin for this application to work.{bcolors.ENDC}
+    {bcolors.HEADER}###########################################################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
+text_login_url_base = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######################## ATTEMTION ########################{bcolors.ENDC}
+    {bcolors.UNDERLINE}You need to do the linkedin people search, example base URL:{bcolors.ENDC}\n
+    Ex: https://www.linkedin.com/search/results/people/
     {bcolors.HEADER}###########################################################{bcolors.ENDC}\n
     {bcolors.ENDC}
     """

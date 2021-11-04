@@ -49,6 +49,7 @@ class ScoreProfile:
         self.URL_PROFILE = "url_profile"
         self.EDUCATION = "education"
         self.INGLES = "inglês"
+        self.ENGLISH = "english"
         self.MESTRADO = "mestrado"
         self.DOUTORADO = "doutorado"
         self.POS_GRADUACAO = "pós graduação"
@@ -58,6 +59,7 @@ class ScoreProfile:
         self.GRADUADO = "graduado"
         self.BACHAREL = "bacharel"
         self.BACHARELADO = "bacharelado"
+        self.SUPERIOR = "superior"
         self.TECNOLOGO = "tecnólogo"
         self.LEVEL_EDUCATION = "level_education"
         self.SR = "sênior"
@@ -81,7 +83,7 @@ class ScoreProfile:
         self.tech_items = ["Tempo", "Certificações", "Selo Linkedin", "Indicações"]
         self.job_characteristics = {
             "technologies": [],
-            "language": [self.INGLES],
+            "language": [self.INGLES, self.ENGLISH],
             "level": [self.SR, self.PL, self.JR]
         }
 
@@ -127,22 +129,26 @@ class ScoreProfile:
         """
         search_list_menu = SearchDao(self.database).select_search_person_group_by_url_filter()
         dict_result = dict()
+        string_space = "    "
         for idx, search in enumerate(search_list_menu):
+            counter = SearchDao(self.database).search_counter_by_url_filter(search.url_filter)
             option_number = idx + 1
+            text = f"""{bcolors.BOLD}[{option_number}]{bcolors.ENDC} {bcolors.UNDERLINE}({search.datetime}){bcolors.ENDC} - {search.text_filter} ({counter} records)\n"""
             dict_result[option_number] = {
-                "text": f"{bcolors.BOLD}[{option_number}]{bcolors.ENDC} {bcolors.UNDERLINE}({search.datetime}){bcolors.ENDC} - {search.text_filter}\n",
+                "text": text,
                 "condition_sql": search.url_filter
             }
         number = len(dict_result.keys())
+        counter_all = SearchDao(self.database).search_counter_is_not_null()
         dict_result[number] = {
-            "text": f"{bcolors.BOLD}[{number}]{bcolors.ENDC} Export all database records.\n",
+            "text": f"{bcolors.BOLD}[{number}]{bcolors.ENDC} Export all ({counter_all}) database records.\n",
             "condition_sql": None
         }
-        text_menu = f"    {bcolors.HEADER}########## Please choose your NUMBER option: ##########{bcolors.ENDC}\n"
+        text_menu = f"{string_space}{bcolors.HEADER}########## Please choose your NUMBER option (only the last FIVE): ##########{bcolors.ENDC}\n"
         for value in dict_result.values():
-            text_menu = text_menu + f"    {value['text']}"
-        text_menu = text_menu + f"    {bcolors.HEADER}#######################################################{bcolors.ENDC}\n"
-        text_menu = text_menu + f"    {bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}"
+            text_menu = text_menu + f"{string_space}{value['text'].title()}"
+        text_menu = text_menu + f"{string_space}{bcolors.HEADER}#######################################################{bcolors.ENDC}\n"
+        text_menu = text_menu + f"{string_space}{bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}"
         return dict_result, text_menu
 
     def __list_person(self, condition_sql):
@@ -397,7 +403,8 @@ class ScoreProfile:
         url_profile = row['person'].url
         email = row['person'].email
         phone_number = row['person'].phone_number
-        language_level = row['scores'][self.LANGUAGE][self.INGLES]["level"]
+        language_level = self.__get_is_exist_english_language(row['scores'])
+        language_level = language_level["level"]
         education = None
         for key in row['scores'][self.EDUCATION].keys():
             if key != "level_education":
@@ -423,29 +430,38 @@ class ScoreProfile:
         self.columns_export["technologies"] = row['scores']['technologies']
         return self.columns_export
 
+    def __get_is_exist_english_language(self, data):
+        level_list = [data[self.LANGUAGE][self.INGLES]["level"], data[self.LANGUAGE][self.ENGLISH]["level"]]
+        language_score = max([data[self.LANGUAGE][self.INGLES]["score"], data[self.LANGUAGE][self.ENGLISH]["score"]])
+        language_level = None
+        if language_score > 0:
+            language_level = [i for i in level_list if i is not None][0]
+        return {"level": language_level, "score": language_score}
+
     def __get_time_experience(self, experiences):
         """
         Faz o cálculo total do tempo de experiência do perfil e retorna um texto amigável.
         """
-        total_anos = 0
-        total_meses = 0
+        total_years = 0
+        total_months = 0
         for experience_list in experiences:
             for experience in experience_list:
-                if experience.anos:
-                    total_anos += experience.anos
-                if experience.meses:
-                    total_meses += experience.meses
-        meses_aux = 0
-        anos_aux = 0
-        for x in range(0, total_meses):
-            meses_aux += 1
-            if meses_aux == self.um_ano:
-                anos_aux += 1
-                meses_aux = 0
-        meses_restantes = total_meses - (anos_aux * 12)
-        anos_text = self.__get_format_time_experience(total_anos, "{} ano", "{} anos")
-        meses_text = self.__get_format_time_experience(meses_restantes, "{} mês", "{} meses")
-        return f"{anos_text} {meses_text}".strip()
+                if experience.years:
+                    total_years += experience.years
+                if experience.months:
+                    total_months += experience.months
+        months_aux = 0
+        years_aux = 0
+        for x in range(0, total_months):
+            months_aux += 1
+            if months_aux == self.um_ano:
+                years_aux += 1
+                months_aux = 0
+        months_remaining = total_months - (years_aux * 12)
+        total_years += years_aux
+        years_text = self.__get_format_time_experience(total_years, "{} ano", "{} anos")
+        months_text = self.__get_format_time_experience(months_remaining, "{} mês", "{} meses")
+        return f"{years_text} {months_text}".strip()
 
     def __get_format_time_experience(self, value, text_singular, text_plural):
         """
@@ -548,7 +564,7 @@ class ScoreProfile:
             color = bcolors.ORANGE
             msg = "Ok..."
         elif 50 <= media <= 75:
-            hexadecimal = "FFFF00"
+            hexadecimal = "E3E300"
             color = bcolors.YELLOW
             msg = "Good!"
         elif media > 75:
@@ -557,17 +573,18 @@ class ScoreProfile:
             msg = "Great!!!"
         return color, msg, hexadecimal
 
-    def __calculate_time(self, anos, meses):
+    def __calculate_time(self, years, months):
         """
         Converte os anos em meses e faz a soma do total em meses.
         """
-        anos = anos or 0
-        meses = meses or 0
-        result = (anos * 12) + meses
+        years = years or 0
+        months = months or 0
+        result = (years * 12) + months
         return result
 
     def __weighted_calculation(self, list_result, search_list):
         """
+        Planilha: https://docs.google.com/spreadsheets/d/11nilsQIwfTzaWQXd7T3ZyBYDu4JBoX1PD9MRd8S8Ebc/edit?usp=sharing
         ############# Cálculo Ponderado ##############
         |--------------------------------------------|
         |Caracteristicas		  |              Peso|
@@ -599,6 +616,8 @@ class ScoreProfile:
         |            |    60 a 80 indicações  |  8   |
         |            |    80 a 99 indicações  |  10  |
         |--------------------------------------------|
+        |Selo Linkedin                        |  10  |
+        |--------------------------------------------|
         |Certificações *		              |  5   |
         |--------------------------------------------|
         |Mestrado		          |              10  |
@@ -608,6 +627,8 @@ class ScoreProfile:
         |Técnologo      		  |              5   |
         |--------------------------------------------|
 
+        Média: ( TOTAL_MAX_SCORE_BY_PROFILE / TOTAL_MAX_SCORE_BY_FILTER ) * 100 = MEDIA
+        * Ex: ( 75 / 120 ) * 100 = 62,5
         * Ex:
         ##########################################################################
         Tecnologias: Python, React, Node.js, TypeScript, React Native,
@@ -634,7 +655,7 @@ class ScoreProfile:
         """
         Cálculo ponderado das técnologias
         """
-        score_dict = self.__set_time_experiences_descricao(person, score_dict, self.TECHNOLOGIES)
+        score_dict = self.__set_time_experiences_description(person, score_dict, self.TECHNOLOGIES)
         score_dict, max_score_01 = self.__set_score_skills(person, score_dict, self.TECHNOLOGIES)
         score_dict, max_score_02 = self.__set_score_subtitle(person, score_dict, self.TECHNOLOGIES)
         score_dict, max_score_03 = self.__set_score_about(person, score_dict, self.TECHNOLOGIES)
@@ -667,7 +688,7 @@ class ScoreProfile:
         """
         Cálculo ponderado do nível profissional
         """
-        score_dict, max_score_12 = self.__set_score_experiences_cargo(person, score_dict)
+        score_dict, max_score_12 = self.__set_score_experiences_position(person, score_dict)
         self.max_score_level = sum([max_score_12])
         return score_dict
 
@@ -745,39 +766,48 @@ class ScoreProfile:
                 score_dict[main_key][key]['score'] += max_score
         return score_dict, max_score
 
-    def __set_time_experiences_descricao(self, person, score_dict, main_key):
+    def __set_time_experiences_description(self, person, score_dict, main_key):
         """
         Faz a soma do tempo percorrendo as experiências para cada tecnologia.
         """
         for key, score in score_dict[main_key].items():
             for experience_list in person.experiences:
                 for experience in experience_list:
-                    if key in experience.cargo.lower() or experience.descricao and key in experience.descricao.lower():
-                        tempo = self.__calculate_time(experience.anos, experience.meses)
+                    if key in experience.position.lower() or experience.description and key in experience.description.lower():
+                        tempo = self.__calculate_time(experience.years, experience.months)
                         score_dict[main_key][key]['tempo'] += tempo
         return score_dict
 
-    def __set_score_experiences_cargo(self, person, score_dict):
+    def __set_score_experiences_position(self, person, score_dict):
         """
-        Verifica se existe no 'saco de palavras' as palavras 'sênior', 'pleno' e 'júnior', caso exista algum, o loop é
-        interrompido, pois só é válido uma única validação buscando a experiência mais recente até a mais antiga.
+        Verifica se existe no 'saco de palavras' as palavras 'sênior', 'pleno' e 'júnior'. o loop é interrompido, pois
+        só é válido uma única validação buscando a experiência mais recente até a mais antiga.
         """
         max_score = 10
         for experience_list in person.experiences:
-            for experience in experience_list:
-                if self.SR in experience.cargo.lower() or experience.descricao and self.SR in experience.descricao.lower():
-                    if score_dict[self.LEVEL][self.SR]["score"] == 0:
-                        score_dict[self.LEVEL][self.SR]["score"] += max_score
-                        break
-                elif self.PL in experience.cargo.lower() or experience.descricao and self.PL in experience.descricao.lower():
-                    if score_dict[self.LEVEL][self.SR]["score"] == 0:
-                        score_dict[self.LEVEL][self.PL]["score"] += 7
-                        break
-                elif self.JR in experience.cargo.lower() or experience.descricao and self.JR in experience.descricao.lower():
-                    if score_dict[self.LEVEL][self.SR]["score"] == 0:
-                        score_dict[self.LEVEL][self.JR]["score"] += 3
-                        break
+            result = self.__get_professional_level(score_dict, experience_list, max_score)
+            if result:
+                break
         return score_dict, max_score
+
+    def __get_professional_level(self, score_dict, experience_list, max_score=10):
+        """
+        Caso exista algum nível profissional, é retornado True, se não, Falso.
+        """
+        for experience in experience_list:
+            if unidecode(self.SR) in unidecode(experience.position.lower()) or experience.description and unidecode(self.SR) in unidecode(experience.description.lower()):
+                if score_dict[self.LEVEL][self.SR]["score"] == 0:
+                    score_dict[self.LEVEL][self.SR]["score"] += max_score
+                    return True
+            elif self.PL in unidecode(experience.position.lower()) or experience.description and self.PL in unidecode(experience.description.lower()):
+                if score_dict[self.LEVEL][self.SR]["score"] == 0:
+                    score_dict[self.LEVEL][self.PL]["score"] += 7
+                    return True
+            elif unidecode(self.JR) in unidecode(experience.position.lower()) or experience.description and unidecode(self.JR) in unidecode(experience.description.lower()):
+                if score_dict[self.LEVEL][self.SR]["score"] == 0:
+                    score_dict[self.LEVEL][self.JR]["score"] += 3
+                    return True
+        return False
 
     def __set_score_experiences(self, technologies):
         """
@@ -803,7 +833,7 @@ class ScoreProfile:
         max_score = 5
         for key, score in score_dict[main_key].items():
             for certification in person.certifications:
-                if key in certification.titulo.lower():
+                if key in certification.title.lower():
                     score_dict[main_key][key]['score'] += max_score
                     score_dict[main_key][key]['certification'] = True
                     break
@@ -816,33 +846,31 @@ class ScoreProfile:
         max_score = 10
         for key, score in score_dict[main_key].items():
             for skill in person.skills:
-                if key in skill.titulo.lower():
+                if key in skill.title.lower():
                     if skill.verify:
                         score_dict[main_key][key]['score'] += max_score
                         score_dict[main_key][key]['verify'] = skill.verify
+                    if 0 < skill.indications <= 20:
+                        score_dict[main_key][key]['score'] += 2
+                        score_dict[main_key][key]['indications'] = skill.indications
                         break
-                    else:
-                        if skill.indications < 20:
-                            score_dict[main_key][key]['score'] += 2
-                            score_dict[main_key][key]['indications'] = skill.indications
-                            break
-                        elif 20 < skill.indications < 40:
-                            score_dict[main_key][key]['score'] += 4
-                            score_dict[main_key][key]['indications'] = skill.indications
-                            break
-                        elif 40 < skill.indications < 60:
-                            score_dict[main_key][key]['score'] += 6
-                            score_dict[main_key][key]['indications'] = skill.indications
-                            break
-                        elif 60 < skill.indications < 80:
-                            score_dict[main_key][key]['score'] += 8
-                            score_dict[main_key][key]['indications'] = skill.indications
-                            break
-                        elif 80 < skill.indications < 99:
-                            score_dict[main_key][key]['score'] += max_score
-                            score_dict[main_key][key]['indications'] = skill.indications
-                            break
-        return score_dict, max_score
+                    elif 20 < skill.indications <= 40:
+                        score_dict[main_key][key]['score'] += 4
+                        score_dict[main_key][key]['indications'] = skill.indications
+                        break
+                    elif 40 < skill.indications <= 60:
+                        score_dict[main_key][key]['score'] += 6
+                        score_dict[main_key][key]['indications'] = skill.indications
+                        break
+                    elif 60 < skill.indications <= 80:
+                        score_dict[main_key][key]['score'] += 8
+                        score_dict[main_key][key]['indications'] = skill.indications
+                        break
+                    elif 80 < skill.indications <= 99:
+                        score_dict[main_key][key]['score'] += max_score
+                        score_dict[main_key][key]['indications'] = skill.indications
+                        break
+        return score_dict, (max_score + max_score)
 
     def __set_score_languages(self, person, score_dict, main_key):
         """
@@ -851,9 +879,9 @@ class ScoreProfile:
         max_score = 10
         for key, score in score_dict[main_key].items():
             for language in person.languages:
-                if key in language.idioma.lower():
-                    if language.nivel:
-                        level = language.nivel.lower().replace("nível", "").strip()
+                if key in language.language.lower():
+                    if language.level:
+                        level = language.level.lower().replace("nível", "").strip()
                         if level == self.FLUENTE_OU_NATIVO:
                             score_dict[main_key][key]['score'] += max_score
                             score_dict[main_key][key]['level'] = self.FLUENTE_OU_NATIVO.title()
@@ -889,6 +917,7 @@ class ScoreProfile:
                                         self.__similarity(education.level.lower(), self.GRADUADO),
                                         self.__similarity(education.level.lower(), self.BACHAREL),
                                         self.__similarity(education.level.lower(), self.BACHARELADO),
+                                        self.__similarity(education.level.lower(), self.SUPERIOR)
                                         ),
                     self.TECNOLOGO: self.__similarity(education.level.lower(), self.TECNOLOGO)
                 }
@@ -938,7 +967,7 @@ class ScoreProfile:
         """
         Verifica se tem mestrado na String
         """
-        if self.MESTRADO == level:
+        if self.MESTRADO in level:
             return True
         return False
 
@@ -946,7 +975,7 @@ class ScoreProfile:
         """
         Verifica se tem doutorado na String
         """
-        if self.DOUTORADO == level:
+        if self.DOUTORADO in level:
             return True
         return False
 
@@ -954,7 +983,7 @@ class ScoreProfile:
         """
         Verifica se tem pós graduação ou especialização na String
         """
-        if self.POS_GRADUACAO == level or self.POS == level or self.ESPECIALIZACAO == level:
+        if self.POS_GRADUACAO in level or self.POS in level or self.ESPECIALIZACAO in level:
             return True
         return False
 
@@ -962,7 +991,7 @@ class ScoreProfile:
         """
         Verifica se tem graduação na String
         """
-        if self.GRADUACAO == level or self.GRADUADO == level or self.BACHAREL == level or self.BACHARELADO == level:
+        if self.GRADUACAO in level or self.GRADUADO in level or self.BACHAREL in level or self.BACHARELADO in level or self.SUPERIOR in level:
             return True
         return False
 
@@ -970,7 +999,7 @@ class ScoreProfile:
         """
         Verifica se tem tecnólogo na String
         """
-        if self.TECNOLOGO == level:
+        if self.TECNOLOGO in level:
             return True
         return False
 
