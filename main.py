@@ -119,7 +119,7 @@ def __choose(driver):
         print(text_error)
         __choose(driver)
     except TimeoutError as e:
-        print(text_unknown_error)
+        print(text_time_out_error)
         __choose(driver)
     except AttributeError as e:
         print(text_unknown_error)
@@ -151,12 +151,9 @@ def __start_score_all_option(driver):
     """
     Verifica se existe registro, caso sim, faz o procedimento de Scraping em 'Search', 'Person' e exporta os dados.
     """
-    if __print_error_verify():
-        __search(driver)
-        __profile(driver)
-        __score_and_export(driver)
-    else:
-        __choose(driver)
+    __search(driver)
+    __profile(driver)
+    __score_and_export(driver)
 
 
 def __print_error_verify():

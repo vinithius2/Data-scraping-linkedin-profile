@@ -74,6 +74,14 @@ text_unknown_error = f"""\n
     {bcolors.ENDC}
     """
 
+text_time_out_error = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
+    {bcolors.FAIL}Profile taking too long to load, check your connection...{bcolors.ENDC}
+    {bcolors.HEADER}###########################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
 text_error_search = f"""\n
     {bcolors.FAIL}
     {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}

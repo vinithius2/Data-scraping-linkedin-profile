@@ -58,6 +58,7 @@ class ScoreProfile:
         self.GRADUACAO = "graduação"
         self.GRADUADO = "graduado"
         self.BACHAREL = "bacharel"
+        self.BACHELOR = "bachelor"
         self.BACHARELADO = "bacharelado"
         self.SUPERIOR = "superior"
         self.TECNOLOGO = "tecnólogo"
@@ -404,7 +405,8 @@ class ScoreProfile:
         email = row['person'].email
         phone_number = row['person'].phone_number
         language_level = self.__get_is_exist_english_language(row['scores'])
-        language_level = language_level["level"]
+        if language_level:
+            language_level = language_level["level"]
         education = None
         for key in row['scores'][self.EDUCATION].keys():
             if key != "level_education":
@@ -433,10 +435,11 @@ class ScoreProfile:
     def __get_is_exist_english_language(self, data):
         level_list = [data[self.LANGUAGE][self.INGLES]["level"], data[self.LANGUAGE][self.ENGLISH]["level"]]
         language_score = max([data[self.LANGUAGE][self.INGLES]["score"], data[self.LANGUAGE][self.ENGLISH]["score"]])
-        language_level = None
         if language_score > 0:
-            language_level = [i for i in level_list if i is not None][0]
-        return {"level": language_level, "score": language_score}
+            language_level = [i for i in level_list if i is not None]
+            if language_level:
+                return {"level": language_level[0], "score": language_score}
+        return None
 
     def __get_time_experience(self, experiences):
         """
@@ -917,6 +920,7 @@ class ScoreProfile:
                                         self.__similarity(education.level.lower(), self.GRADUADO),
                                         self.__similarity(education.level.lower(), self.BACHAREL),
                                         self.__similarity(education.level.lower(), self.BACHARELADO),
+                                        self.__similarity(education.level.lower(), self.BACHELOR),
                                         self.__similarity(education.level.lower(), self.SUPERIOR)
                                         ),
                     self.TECNOLOGO: self.__similarity(education.level.lower(), self.TECNOLOGO)
@@ -991,7 +995,8 @@ class ScoreProfile:
         """
         Verifica se tem graduação na String
         """
-        if self.GRADUACAO in level or self.GRADUADO in level or self.BACHAREL in level or self.BACHARELADO in level or self.SUPERIOR in level:
+        if self.GRADUACAO in level or self.GRADUADO in level or self.BACHAREL in level or self.BACHARELADO in level \
+                or self.BACHELOR in level or self.SUPERIOR in level:
             return True
         return False
 
