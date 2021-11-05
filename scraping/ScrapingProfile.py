@@ -1,10 +1,14 @@
 import itertools
 from time import sleep
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.common.exceptions import JavascriptException
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
@@ -30,6 +34,7 @@ class ScrapingProfile:
         """
         Inicia o 'Scraping' do perfil.
         """
+        print(f"\n{bcolors.BLUE}Start scraping profiles...{bcolors.ENDC}")
         search_list = SearchDao(self.database).select_search_person_id_is_null()
         for search in search_list:
             person = PersonDao(database=self.database).select_people_by_url(search.url_profile)
@@ -58,6 +63,12 @@ class ScrapingProfile:
         if person_id:
             SearchDao(self.database).update_search_person_id(person_id, person.url)
             print(f"({person_id}) {bcolors.BOLD}{person.name} {bcolors.GREEN}CADASTRADO{bcolors.ENDC}{bcolors.ENDC}: {person.url}")
+
+    def __wait_element_by_css_class(self, driver, css_class, timeout=30):
+        """
+        Aguarda o respectivo elemento da classe CSS carregar.
+        """
+        return WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, css_class)))
 
     def __open_sections(self, driver):
         """
@@ -192,7 +203,8 @@ class ScrapingProfile:
         """
         email = None
         phone = None
-        driver.execute_script("window.open('{}detail/contact-info/')".format(url_profile))
+        parsed_url = urlparse(url_profile)
+        driver.execute_script("window.open('{}/detail/contact-info/')".format(parsed_url.path))
         sleep(1)
         driver.switch_to.window(driver.window_handles[1])
         html_page = driver.page_source

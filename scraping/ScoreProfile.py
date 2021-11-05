@@ -140,6 +140,7 @@ class ScoreProfile:
                 "condition_sql": search.url_filter
             }
         number = len(dict_result.keys())
+        number += 1
         counter_all = SearchDao(self.database).search_counter_is_not_null()
         dict_result[number] = {
             "text": f"{bcolors.BOLD}[{number}]{bcolors.ENDC} Export all ({counter_all}) database records.\n",
@@ -260,6 +261,7 @@ class ScoreProfile:
         self.__expand_columns(columns_export_size, sheet)
         name_file = datetime.datetime.now().strftime("%m_%d_%Y_%H%M%S")
         file_path = f"C:\\scrapingLinkedinProfiles\\export\\{name_file}.xlsx"
+        print(f"\n{bcolors.BLUE}Waiting export XLS...{bcolors.ENDC}")
         workbook.save(file_path)
         print(f"\n{bcolors.GREEN}Export XLS Finished!{bcolors.ENDC}: {file_path}")
         self.__open_file(file_path)
@@ -526,11 +528,11 @@ class ScoreProfile:
         Pega o tempo em meses e retorna um texto amigável
         """
         font_bold = Font(bold=True)
-        if self.zero_ano > tempo < self.um_ano:
+        if self.zero_ano < tempo <= self.um_ano:
             return "Menor igual a 1 ano.", font_bold
-        elif self.um_ano < tempo < self.dois_anos:
+        elif self.um_ano < tempo <= self.dois_anos:
             return "De 1 a 2 anos.", font_bold
-        elif self.dois_anos < tempo < self.tres_anos:
+        elif self.dois_anos < tempo <= self.tres_anos:
             return "De 2 a 3 anos.", font_bold
         elif tempo > self.tres_anos:
             return "Maior que 3 anos.", font_bold

@@ -2,12 +2,11 @@ from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
-from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
 from models.Search import Search
 from utils.bcolors import bcolors
@@ -26,6 +25,7 @@ class ScrapingSearch:
         """
         Iniciar o scraping search...
         """
+        print(f"\n{bcolors.BLUE}Waiting scraping list profiles...{bcolors.ENDC}")
         self.driver.get(self.url_filter)
         captured_value = self.__get_keywords(self.url_filter)
         self.__search(captured_value)
@@ -45,15 +45,15 @@ class ScrapingSearch:
         """
         Iniciar o scraping search...
         """
-        element = self.__wait_element_by_css_class('reusable-search__result-container')
-        self.__scroll_down_page(self.driver)
-        html_page = self.driver.page_source
-        soup = BeautifulSoup(html_page, 'html.parser')
-        disable = self.__page(soup)
+        try:
+            element = self.__wait_element_by_css_class('reusable-search__result-container')
+            self.__scroll_down_page(self.driver)
+            html_page = self.driver.page_source
+            soup = BeautifulSoup(html_page, 'html.parser')
+            disable = self.__page(soup)
 
-        if element.is_displayed():
-            profile_list = soup.findAll('li', {'class': ['reusable-search__result-container']})
-            try:
+            if element.is_displayed():
+                profile_list = soup.findAll('li', {'class': ['reusable-search__result-container']})
                 for item in profile_list:
                     profile = item.find('span', {'class': ['entity-result__title-text']})
                     if profile.find('span', {'class': ['visually-hidden']}):
@@ -71,28 +71,33 @@ class ScrapingSearch:
                     else:
                         print(f"{text_out_of_your_network} - {url_profile}")
                 self.__click_next(disable, count)
-            except NoSuchElementException as e:
-                log_erro(e)
-            except AttributeError as e:
-                log_erro(e)
+        except NoSuchElementException as e:
+            log_erro(e)
+        except AttributeError as e:
+            log_erro(e)
+        except TimeoutException as e:
+            log_erro(e)
 
     def __page(self, soup):
         """
         Verifica se o botão da paginação está desabilitado ou não para seguir a próxima página.
         """
         disable = False
-        element = self.__wait_element_by_css_class('artdeco-pagination')
-        if element.is_displayed():
-            container_pages = soup.find('div', {'class': ['artdeco-pagination']})
-            if container_pages:
-                next_class = container_pages.find('button', {'class': 'artdeco-pagination__button--next'}).attrs['class']
-                if 'artdeco-button--disabled' in next_class:
-                    disable = True
-                page_number = container_pages.find('li', {'class': ['selected']}).text.strip()
-                print(f"\n{bcolors.HEADER}#### PAGE {page_number} ####{bcolors.ENDC}\n")
+        try:
+            element = self.__wait_element_by_css_class('artdeco-pagination')
+            if element.is_displayed():
+                container_pages = soup.find('div', {'class': ['artdeco-pagination']})
+                if container_pages:
+                    next_class = container_pages.find('button', {'class': 'artdeco-pagination__button--next'}).attrs['class']
+                    if 'artdeco-button--disabled' in next_class:
+                        disable = True
+                    page_number = container_pages.find('li', {'class': ['selected']}).text.strip()
+                    print(f"\n{bcolors.HEADER}#### PAGE {page_number} ####{bcolors.ENDC}\n")
+        except TimeoutException as e:
+            log_erro(e)
         return disable
 
-    def __wait_element_by_css_class(self, css_class, timeout=40):
+    def __wait_element_by_css_class(self, css_class, timeout=30):
         """
         Aguarda o respectivo elemento da classe CSS carregar.
         """
