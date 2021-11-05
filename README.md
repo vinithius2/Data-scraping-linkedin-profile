@@ -52,6 +52,8 @@ _(pontos_por_perfil/máximo_de_pontos_por_filtro) * 100 = media_
 
 Após o cálculo ponderado é realizado a exportação para um arquivo XLS com os dados detalhados e de forma organizada e amigavel ao usuário. Dessa maneira, o profissional de RH poderá agilizar suas tomadas de decisão com um algoritmo inteligente e rápido.
 
+![xls](https://user-images.githubusercontent.com/7644485/140517186-c0a96cd9-2440-432c-8bcf-61fed5a6f7c2.png)
+
 ## Pontos de observação
 
 Atualmente essa versão se encontra em teste, o que torna plausível alguns comportamentos imprevisíveis, pois o _Data Scraping_ utiliza-se de classes, tags e ids do _HTML_ para obter os dados, se o _Linkedin_ mudar essas referências, o comportamento dessa aplicação pode ser inesperado. A quantidade de requisições utilizadas pelo algoritimo pode gerar algum alerta para a equipe de _Blue Team_ do _Linkedin_, o que pode ocorrer de derrubar a sua seção ou solicitar alguma alternativa de verificação para identificar se você é um "robô" ou não, caso ocorra algum comportamento estranho, não hesite de entrar em contato. Porém, não se preocupe, foi feito vários testes para reverter essa situação, caso ocorra, a automação pode parar e aguardar ação humana para prosseguir.
