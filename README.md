@@ -3,6 +3,8 @@ _**PT:**_ Essa aplicação tem como objetivo gerar um relatório inteligente sob
 
 _**ENG:**_ This application aims to generate an intelligent report on possible job applicants based on a technology filter and a weighted calculation for each field in the LinkedIn profile.
 
+![search](https://user-images.githubusercontent.com/7644485/140811897-90b15082-78a8-422d-b1df-7261174bfe51.png)
+
 ![menu](https://user-images.githubusercontent.com/7644485/140386425-a5350a1e-4b86-47a5-9300-7e0665f67883.png)
 
 ## Primeira etapa (First step)
