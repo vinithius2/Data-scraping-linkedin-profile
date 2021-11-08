@@ -1,4 +1,4 @@
-DEBUG = True
+DEBUG = False
 URL_LOGIN = 'https://www.linkedin.com/uas/login'
 URL_BASE_PEOPLE = 'https://www.linkedin.com/search/results/people/'
 SEARCH_PROFILES = 1

@@ -275,11 +275,10 @@ def __config():
     Configuração inicial para o navegador Chrome.
     """
     chrome_options = Options()
-    # if DEBUG:
-    #     chrome_options.add_experimental_option("detach", True)
-    # else:
-    #     chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    if DEBUG:
+        chrome_options.add_experimental_option("detach", True)
+    else:
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
     driver = webdriver.Chrome(ChromeDriverManager(log_level=0).install(), options=chrome_options)
     driver.get(URL_LOGIN)
     driver.maximize_window()
