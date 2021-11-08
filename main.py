@@ -2,9 +2,11 @@ import os
 import sys
 import winsound
 from pathlib import Path
-
+from time import sleep
+import webbrowser
 from selenium import webdriver
-from selenium.common.exceptions import InvalidArgumentException
+from selenium.common.exceptions import InvalidArgumentException, WebDriverException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 
 from config import *
@@ -14,10 +16,14 @@ from database.dao.SearchDao import SearchDao
 from scraping.ScoreProfile import ScoreProfile
 from scraping.ScrapingProfile import ScrapingProfile
 from scraping.ScrapingSearch import ScrapingSearch
-from utils import log_erro
+from utils.log_erro import log_erro
 from utils.texts import *
+from webdriver_manager.chrome import ChromeDriverManager
+import colorama
 
 database = Database()
+os.system('cls')
+colorama.init()
 
 
 def main():
@@ -27,12 +33,20 @@ def main():
     print(text_logo)
     __create_directory()
     database.create_tables_if_not_exists()
-    driver = __config()
-    print(text_waiting_login)
-    winsound.Beep(250, 100)
-    __login(driver)
-    winsound.Beep(500, 100)
-    __choose(driver)
+    try:
+        driver = __config()
+        print(text_waiting_login)
+        winsound.Beep(250, 100)
+        __login(driver)
+        winsound.Beep(500, 100)
+        __choose(driver)
+    except WebDriverException as e:
+        winsound.Beep(250, 100)
+        print(text_chrome_install)
+        log_erro(e)
+        sleep(25)
+        print(text_closed_text)
+        sleep(6)
 
 
 def __login(driver):
@@ -113,16 +127,27 @@ def __choose(driver):
         if option == ALL_OPTIONS:
             __start_score_all_option(driver)
             __choose(driver)
+        if option == TUTORIAL:
+            print(text_scraping_tutorial)
+            webbrowser.open("https://drive.google.com/drive/folders/1aKO-5552TPzkPXLixR9w4Wulw_rSpVEV?usp=sharing")
+            __choose(driver)
         if option == CLOSE_APP:
             __close(driver)
     except ValueError as e:
         print(text_error)
+        log_erro(e)
         __choose(driver)
     except TimeoutError as e:
         print(text_time_out_error)
+        log_erro(e)
+        __choose(driver)
+    except TimeoutException as e:
+        print(text_time_out_error)
+        log_erro(e)
         __choose(driver)
     except AttributeError as e:
         print(text_unknown_error)
+        log_erro(e)
         __choose(driver)
 
 
@@ -250,8 +275,12 @@ def __config():
     Configuração inicial para o navegador Chrome.
     """
     chrome_options = Options()
-    chrome_options.add_experimental_option("detach", True)
-    driver = webdriver.Chrome(executable_path=r"./chromedriver.exe", options=chrome_options)
+    # if DEBUG:
+    #     chrome_options.add_experimental_option("detach", True)
+    # else:
+    #     chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+    driver = webdriver.Chrome(ChromeDriverManager(log_level=0).install(), options=chrome_options)
     driver.get(URL_LOGIN)
     driver.maximize_window()
     return driver

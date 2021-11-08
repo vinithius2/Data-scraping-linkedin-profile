@@ -1,4 +1,5 @@
 import itertools
+from sqlite3 import IntegrityError
 
 from models.Certification import Certification
 from models.Education import Education
@@ -7,6 +8,8 @@ from models.Language import Language
 from models.Person import Person
 from models.Skill import Skill
 from utils.bcolors import bcolors
+from utils.log_erro import log_erro
+from utils.texts import text_already_exists_record
 
 
 class PersonDao:
@@ -30,7 +33,7 @@ class PersonDao:
         if not exist:
             self.__insert()
         else:
-            print(f"{bcolors.WARNING}Perfil {self.person.name} JÁ EXISTE registro: {self.person.url}{bcolors.ENDC}")
+            print(text_already_exists_record.format(bcolors.WARNING, self.person.name, self.person.url, bcolors.ENDC))
         return self.person_id
 
     def __person_exist(self, person_list):
@@ -42,26 +45,32 @@ class PersonDao:
 
     def __insert(self):
         self.person_id = self.__insert_person(self.person)
-        for certification in self.person.certifications:
-            self.__insert_certification(certification, self.person_id)
-        for education in self.person.education:
-            self.__insert_education(education, self.person_id)
-        for language in self.person.languages:
-            self.__insert_language(language, self.person_id)
-        for skill in self.person.skills:
-            self.__insert_skill(skill, self.person_id)
-        for experience_list in self.person.experiences:
-            for experience in experience_list:
-                self.__insert_experience(experience, self.person_id)
+        if self.person_id:
+            for certification in self.person.certifications:
+                self.__insert_certification(certification, self.person_id)
+            for education in self.person.education:
+                self.__insert_education(education, self.person_id)
+            for language in self.person.languages:
+                self.__insert_language(language, self.person_id)
+            for skill in self.person.skills:
+                self.__insert_skill(skill, self.person_id)
+            for experience_list in self.person.experiences:
+                for experience in experience_list:
+                    self.__insert_experience(experience, self.person_id)
+
 
     def __insert_person(self, person):
-        query = """INSERT INTO person (name, subtitle, local, about, url, email, phone_number)  
-        VALUES (?,?,?,?,?,?,?)"""
-        self.database.cursor_db.execute(query, [person.name, person.subtitle, person.local, person.about,
-                                                person.url, person.email, person.phone_number])
-        person_id = self.database.cursor_db.lastrowid
-        self.database.connection.commit()
-        return person_id
+        try:
+            query = """INSERT INTO person (name, subtitle, local, about, url, email, phone_number)  
+            VALUES (?,?,?,?,?,?,?)"""
+            self.database.cursor_db.execute(query, [person.name, person.subtitle, person.local, person.about,
+                                                    person.url, person.email, person.phone_number])
+            person_id = self.database.cursor_db.lastrowid
+            self.database.connection.commit()
+            return person_id
+        except IntegrityError as e:
+            log_erro(e)
+            return None
 
     def __insert_certification(self, certification, person_id):
         query = """INSERT INTO certification (title, person_id)  VALUES (?,?)"""

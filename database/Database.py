@@ -44,7 +44,7 @@ class Database:
 
     def __create_table_person(self):
         query = """CREATE TABLE IF NOT EXISTS person (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, subtitle TEXT, 
-        local TEXT, url TEXT, email TEXT, phone_number TEXT, about TEXT)"""
+        local TEXT, url TEXT, email TEXT, phone_number TEXT, about TEXT, UNIQUE(url))"""
         self.cursor_db.execute(query)
 
     def __create_table_experience(self):
@@ -75,5 +75,6 @@ class Database:
 
     def __create_table_search(self):
         query = """CREATE TABLE IF NOT EXISTS search (id INTEGER PRIMARY KEY AUTOINCREMENT, url_filter TEXT, 
-        url_profile TEXT, datetime TEXT, person_id INTEGER, text_filter TEXT, FOREIGN KEY(person_id) REFERENCES person(id))"""
+        url_profile TEXT, datetime TEXT, person_id INTEGER, text_filter TEXT, FOREIGN KEY(person_id) REFERENCES person(id),
+        UNIQUE(url_filter, url_profile))"""
         self.cursor_db.execute(query)

@@ -11,8 +11,12 @@ from database.dao.SearchDao import SearchDao
 from models.Search import Search
 from utils.bcolors import bcolors
 from utils.log_erro import log_erro
+from utils.texts import text_count_scraping_search
+from utils.texts import text_count_scraping_search_exist
 from utils.texts import text_out_of_your_network
+from utils.texts import text_page
 from utils.texts import text_scraping_search_finish
+from utils.texts import text_waiting_scraping_list_profiles
 
 
 class ScrapingSearch:
@@ -25,7 +29,7 @@ class ScrapingSearch:
         """
         Iniciar o scraping search...
         """
-        print(f"\n{bcolors.BLUE}Waiting scraping list profiles...{bcolors.ENDC}")
+        print(text_waiting_scraping_list_profiles)
         self.driver.get(self.url_filter)
         captured_value = self.__get_keywords(self.url_filter)
         self.__search(captured_value)
@@ -59,18 +63,27 @@ class ScrapingSearch:
                     if profile.find('span', {'class': ['visually-hidden']}):
                         profile.find('span', {'class': ['visually-hidden']}).replaceWith(BeautifulSoup("", "html.parser"))
                     url_profile = profile.find('a', {'class': ['app-aware-link']}).attrs['href']
+                    parsed_url = urlparse(url_profile)
+                    show_url_profile = f"{parsed_url.hostname}{parsed_url.path}"
                     if profile.find('span'):
                         name = profile.find('span').text.strip()
+                        is_none = SearchDao(self.database, Search(
+                            url_filter=self.url_filter,
+                            url_profile=url_profile,
+                            text_filter=captured_value
+                        )).insert_search()
                         count += 1
-                        print(f"({count}) {bcolors.BOLD}{name}{bcolors.ENDC} - {url_profile}")
-                        SearchDao(self.database, Search(
-                                    url_filter=self.url_filter,
-                                    url_profile=url_profile,
-                                    text_filter=captured_value
-                                )).insert_search()
+                        if is_none:
+                            print(text_count_scraping_search.format(count, bcolors.BOLD, name, bcolors.ENDC,
+                                                                    bcolors.BLUE, show_url_profile, bcolors.ENDC))
+                        else:
+                            print(text_count_scraping_search_exist.format(count, bcolors.BOLD, name, bcolors.ENDC,
+                                                                          bcolors.WARNING, bcolors.ENDC))
+                            """    ({}) {}{}{} - {}THERE IS REGISTRATION!{}"""
                     else:
-                        print(f"{text_out_of_your_network} - {url_profile}")
-                self.__click_next(disable, count)
+                        print(text_out_of_your_network.format(bcolors.RED, bcolors.BOLD, bcolors.ENDC, bcolors.ENDC,
+                                                              bcolors.BLUE, show_url_profile, bcolors.ENDC))
+                self.__click_next(disable, captured_value, count)
         except NoSuchElementException as e:
             log_erro(e)
         except AttributeError as e:
@@ -92,7 +105,7 @@ class ScrapingSearch:
                     if 'artdeco-button--disabled' in next_class:
                         disable = True
                     page_number = container_pages.find('li', {'class': ['selected']}).text.strip()
-                    print(f"\n{bcolors.HEADER}#### PAGE {page_number} ####{bcolors.ENDC}\n")
+                    print(text_page.format(bcolors.HEADER, page_number, bcolors.ENDC))
         except TimeoutException as e:
             log_erro(e)
         return disable
@@ -103,7 +116,7 @@ class ScrapingSearch:
         """
         return WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.CLASS_NAME, css_class)))
 
-    def __click_next(self, disable, count):
+    def __click_next(self, disable, captured_value, count):
         """
         Clica no botão NEXT caso exista para seguir para a próxima página.
         """
@@ -111,7 +124,7 @@ class ScrapingSearch:
         if not disable:
             button_next = self.driver.find_element_by_class_name('artdeco-pagination__button--next')
             button_next.click()
-            self.__search(count)
+            self.__search(captured_value, count)
 
     def __scroll_down_page(self, driver, speed=8):
         """

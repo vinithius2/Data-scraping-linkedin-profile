@@ -19,4 +19,4 @@ selenium==3.141.0
 soupsieve==2.2.1
 Unidecode==1.3.2
 urllib3==1.26.7
-webdriver-manager==3.4.2
+webdriver-manager==3.5.2

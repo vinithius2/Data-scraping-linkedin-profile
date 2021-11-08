@@ -81,3 +81,17 @@ Outro ponto relevante é que essa aplicação não salva os dados de login e sen
 _**ENG:**_ This version is currently under testing, which makes some unpredictable behavior plausible, as _Data Scraping_ uses _HTML_ classes, tags and ids to obtain the data, if _Linkedin_ changes these references, the behavior of this application may be unexpected . The number of requests used by the algorithm can generate an alert for the _Blue Team_ team of _Linkedin_, which can occur to bring down your section or request some alternative verification to identify if you are a "robot" or not, if any occurs strange behavior, please feel free to get in touch. However, don't worry, several tests were done to reverse this situation, if it happens, the automation can stop and wait for human action to proceed.
 
 Another relevant point is that this application does not save the user's login and password data, this is done manually in the browser when the application is in non-debug_ mode, if _debug_ is enabled, the values already saved are used in the OS environment variables, this is only useful for developers, rest assured, your _Linkedin_ is safe, the source is open source, see for yourself.
+
+## Criar .EXE (Create .EXE)
+
+_**PT:**_ Use o terminal com a virtualenv ativada e com as bibliotecas instaladas e execute o seguinte script:
+
+_**ENG:**_ Use the terminal with virtualenv enabled and the libraries installed and run the following script:
+
+~~~python
+pyinstaller --onefile --console --icon=favicon_likedin_scraping.ico --name=Linkedin_Scraping_Profile_v0.0 main.py
+~~~
+
+_**PT:**_ O executável se encontrará na pasta **dist/**
+
+_**ENG:**_ The executable will be found in the folder **dist/**

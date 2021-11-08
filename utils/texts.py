@@ -33,7 +33,7 @@ text_closed = f"""
            \  \       \ |     | /        /
             \  \      \        /
      {bcolors.ENDC} 
-     {bcolors.UNDERLINE}Closing app Scraping Linkedin Profile V {VERSION}...{bcolors.ENDC}
+     {bcolors.UNDERLINE}Exterminate... Ops... close this app of Scraping Linkedin Profile V {VERSION}...{bcolors.ENDC}
      
      {bcolors.HEADER}#################### CONTACT ####################{bcolors.ENDC}
      Dev: {bcolors.UNDERLINE}Marcos Vinithius =D{bcolors.ENDC}
@@ -41,13 +41,18 @@ text_closed = f"""
      Github project: https://github.com/vinithius2/scraping-data-linkedin-profile
     """
 
+text_closed_text = f"""\n
+    {bcolors.UNDERLINE}Closing app Scraping Linkedin Profile V {VERSION}...{bcolors.ENDC}
+"""
+
 text_option = f"""
     {bcolors.HEADER}########## Please choose your NUMBER option: ##########{bcolors.ENDC}\n
     {bcolors.BOLD}{bcolors.BLUE}(1){bcolors.ENDC}{bcolors.ENDC} Search profiles and save list in database;\n
     {bcolors.BOLD}{bcolors.BLUE}(2){bcolors.ENDC}{bcolors.ENDC} Scraping data each profile from database;\n
     {bcolors.BOLD}{bcolors.BLUE}(3){bcolors.ENDC}{bcolors.ENDC} Weighted calculation score profiles and Export XLS;\n
-    {bcolors.BOLD}{bcolors.BLUE}(4){bcolors.ENDC}{bcolors.ENDC} {bcolors.GREEN}🠕🠕{bcolors.ENDC} All of the above {bcolors.UNDERLINE}(1,2,3){bcolors.ENDC} {bcolors.GREEN}🠕🠕{bcolors.ENDC}.\n
-    {bcolors.BOLD}{bcolors.BLUE}(5){bcolors.ENDC}{bcolors.ENDC} {bcolors.RED}✖{bcolors.ENDC} CLOSE this app {bcolors.RED}✖{bcolors.ENDC}.\n
+    {bcolors.BOLD}{bcolors.BLUE}(4){bcolors.ENDC}{bcolors.ENDC} {bcolors.GREEN}^^{bcolors.ENDC} All of the above {bcolors.UNDERLINE}(1,2,3){bcolors.ENDC} {bcolors.GREEN}^^{bcolors.ENDC}.\n
+    {bcolors.BOLD}{bcolors.BLUE}(5){bcolors.ENDC}{bcolors.ENDC} {bcolors.BLUE}?{bcolors.ENDC} Tutorial... {bcolors.BLUE}?{bcolors.ENDC}.\n
+    {bcolors.BOLD}{bcolors.BLUE}(6){bcolors.ENDC}{bcolors.ENDC} {bcolors.RED}X{bcolors.ENDC} CLOSE this app {bcolors.RED}X{bcolors.ENDC}.\n
     {bcolors.HEADER}#######################################################{bcolors.ENDC}\n
     {bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}
     """
@@ -90,13 +95,29 @@ text_error_search = f"""\n
     {bcolors.ENDC}
     """
 
-text_out_of_your_network = f"{bcolors.RED}{bcolors.BOLD}[NÃO CADASTRADO]{bcolors.ENDC} Usuário fora da sua rede...{bcolors.ENDC}"
+text_scraping_tutorial = f"""
+    {bcolors.BLUE}Tutorial opened in browser!!!{bcolors.ENDC}
+"""
 
-text_scraping_search_finish = f"\n{bcolors.GREEN}Data Scraping list profiles FINISH!!!{bcolors.ENDC}"
+text_out_of_your_network = """
+    {}{}[NOT REGISTERED]{} User outside your network...{} - {}{}{}
+"""
 
-text_scraping_profile_finish = f"\n{bcolors.GREEN}Data Scraping FINISH!!!{bcolors.ENDC}"
+text_scraping_search_finish = f"""
+    {bcolors.GREEN}Data Scraping list profiles FINISH!!!{bcolors.ENDC}
+"""
 
-text_40_seconds = f"{bcolors.WARNING}Verifique o navegador, necessário ação humana, você tem {bcolors.BOLD}40 segundos{bcolors.ENDC}...{bcolors.ENDC}"
+text_scraping_profile_finish = f"""
+    {bcolors.GREEN}Data Scraping FINISH!!!{bcolors.ENDC}
+"""
+
+text_scraping_profile_warning = f"""
+    {bcolors.WARNING}All LinkedIn profiles have already been scraped!!!{bcolors.ENDC}
+"""
+
+text_40_seconds = f"""\n
+    {bcolors.WARNING}Check your browser, human action required, you have {bcolors.BOLD}40 seconds{bcolors.ENDC}...{bcolors.ENDC}
+"""
 
 text_error_person = f"""\n
     {bcolors.FAIL}
@@ -123,12 +144,80 @@ text_error_filter_only_menu = f"""\n
     {bcolors.ENDC}
     """
 
-text_waiting_login = f"{bcolors.BOLD}{bcolors.BLUE}Waiting login...{bcolors.ENDC}{bcolors.ENDC}"
+text_menu_score = """
+    [{}] ({}) - {} ({} records)
+"""
+
+text_menu_score_all = """
+    [{}] Export all (approximately {} or less) database records.
+"""
+
+text_menu_score_header = """
+{}{}########## Please choose your NUMBER option (only the last FIVE): ##########{}
+"""
+
+text_waiting_login = f"""
+    {bcolors.BOLD}{bcolors.BLUE}Waiting login... (Look your Browser){bcolors.ENDC}{bcolors.ENDC}\n
+"""
+
+text_menu_score_header_end = """
+{}{}#######################################################{}
+"""
+
+text_menu_score_option = """
+    {}{}{}* Your option (Only numbers)?{}{}
+"""
+
+text_waiting_scraping_list_profiles = f"""
+    {bcolors.BLUE}Waiting scraping list profiles...{bcolors.ENDC}
+    """
+
+text_waiting_export_xls = f"""
+    {bcolors.BLUE}Waiting export XLS...{bcolors.ENDC}
+    """
+
+text_start_scraping = f"""
+    {bcolors.BLUE}Start scraping each profiles...{bcolors.ENDC}
+    """
+
+text_already_exists_record = """
+    {}Profile {} ALREADY EXISTS record: {}{}
+    """
+
+text_weighted_calculation_performed = """
+    {}Weighted calculation performed!{}
+    """
+
+text_export_finished = """
+    {}Export XLS Finished!{}: {}
+    """
+
+text_page = """
+    {}#### PAGE {} ####{}
+    """
+
+text_count_scraping_search = """    ({}) {}{}{} - {}{}{}"""
+
+text_count_scraping_profile_exist = """    ({}/{}) {}{}{} - {}THERE IS REGISTRATION!{}"""
+
+text_profile_registered = """    ({}/{}) {}{} {}REGISTERED{}{}: {}{}{}"""
+
+text_count_scraping_search_exist = """    ({}) {}{}{} - {}THERE IS REGISTRATION!{}"""
+
+text_chrome_install = f""" 
+    {bcolors.FAIL}{bcolors.BOLD}################################################## ATTEMTION ###################################################\n
+    Chrome closed before the application closed or this computer does not have the Chrome browser, for it to work co-
+    rrectly, do not close Chrome at runtime or do the proper installation.
+    
+    Installation required: {bcolors.ENDC}{bcolors.ENDC} {bcolors.BLUE}https://www.google.com/chrome/{bcolors.ENDC}\n
+    {bcolors.FAIL}{bcolors.BOLD}################################################################################################################{bcolors.ENDC}{bcolors.ENDC}
+    """
 
 text_error_score = f"""\n
     {bcolors.FAIL}
     {bcolors.HEADER}######## ATTEMTION ########{bcolors.ENDC}
     {bcolors.UNDERLINE}Error, repeat the procedure!{bcolors.ENDC}
+    
     {bcolors.HEADER}###########################{bcolors.ENDC}\n
     {bcolors.ENDC}
     """

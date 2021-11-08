@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.common.exceptions import JavascriptException
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
@@ -21,7 +21,11 @@ from models.Skill import Skill
 from utils.bcolors import bcolors
 from utils.log_erro import log_erro
 from utils.texts import text_40_seconds
+from utils.texts import text_count_scraping_profile_exist
+from utils.texts import text_profile_registered
 from utils.texts import text_scraping_profile_finish
+from utils.texts import text_scraping_profile_warning
+from utils.texts import text_start_scraping
 
 
 class ScrapingProfile:
@@ -34,35 +38,48 @@ class ScrapingProfile:
         """
         Inicia o 'Scraping' do perfil.
         """
-        print(f"\n{bcolors.BLUE}Start scraping profiles...{bcolors.ENDC}")
+        print(text_start_scraping)
         search_list = SearchDao(self.database).select_search_person_id_is_null()
-        for search in search_list:
-            person = PersonDao(database=self.database).select_people_by_url(search.url_profile)
-            if not person:
-                self.driver.get(search.url_profile)
-                try:
-                    self.__scroll_down_page(self.driver)
-                except JavascriptException as e:
-                    log_erro(e)
-                    print(text_40_seconds)
-                    sleep(40)
-                    self.driver.get(search.url)
-                    self.__scroll_down_page(self.driver)
-                self.__open_sections(self.driver)
-                person = self.__get_person(self.driver, search.url_profile)
-                self.__save_database(person)
-            else:
-                SearchDao(self.database).update_search_person_id(person[0].id, person[0].url)
+        count_search = len(search_list)
+        count_person = 0
+        if search_list:
+            for search in search_list:
+                person = PersonDao(database=self.database).select_people_by_url(search.url_profile)
+                if not person:
+                    self.driver.get(search.url_profile)
+                    try:
+                        self.__scroll_down_page(self.driver)
+                    except JavascriptException as e:
+                        log_erro(e)
+                        print(text_40_seconds)
+                        sleep(40)
+                        self.driver.get(search.url)
+                        self.__scroll_down_page(self.driver)
+                    self.__open_sections(self.driver)
+                    person = self.__get_person(self.driver, search.url_profile)
+                    count_person += 1
+                    self.__save_database(person, search, count_search, count_person)
+                else:
+                    count_person += 1
+                    print(text_count_scraping_profile_exist.format(count_person, count_search, bcolors.BOLD,
+                                                                  person[0].name, bcolors.ENDC, bcolors.WARNING,
+                                                                  bcolors.ENDC))
+                    SearchDao(self.database).update_search_person_id(person[0].id, search.id)
+        else:
+            print(text_scraping_profile_warning)
         print(text_scraping_profile_finish)
 
-    def __save_database(self, person):
+    def __save_database(self, person, search, total_search, count_person):
         """
         Salva o perfil no banco de dados.
         """
         person_id = PersonDao(database=self.database, person=person).insert()
         if person_id:
-            SearchDao(self.database).update_search_person_id(person_id, person.url)
-            print(f"({person_id}) {bcolors.BOLD}{person.name} {bcolors.GREEN}CADASTRADO{bcolors.ENDC}{bcolors.ENDC}: {person.url}")
+            SearchDao(self.database).update_search_person_id(person_id, search.id)
+            parsed_url = urlparse(person.url)
+            url_profile = f"{parsed_url.hostname}{parsed_url.path}"
+            print(text_profile_registered.format(count_person, total_search, bcolors.BOLD, person.name, bcolors.GREEN,
+                                                 bcolors.ENDC, bcolors.ENDC, bcolors.BLUE, url_profile, bcolors.ENDC))
 
     def __wait_element_by_css_class(self, driver, css_class, timeout=30):
         """

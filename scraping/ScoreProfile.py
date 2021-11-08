@@ -17,7 +17,8 @@ from unidecode import unidecode
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
 from utils.bcolors import bcolors
-from utils.texts import text_error
+from utils.texts import text_error, text_waiting_export_xls, text_export_finished, text_weighted_calculation_performed, \
+    text_menu_score, text_menu_score_all, text_menu_score_header, text_menu_score_header_end, text_menu_score_option
 from utils.texts import text_error_filter_only_menu
 from utils.texts import text_error_score
 from utils.texts import text_option_score
@@ -102,7 +103,7 @@ class ScoreProfile:
             result_list = self.__weighted_calculation(list_result, search_list)
             result = sorted(result_list, key=lambda d: d['scores']['media'], reverse=True)
             self.__export(result)
-            print(f"\n{bcolors.GREEN}Weighted calculation performed!{bcolors.ENDC}")
+            print(text_weighted_calculation_performed.format(bcolors.GREEN, bcolors.ENDC))
         except ValueError as e:
             print(text_error_score)
             self.start()
@@ -134,7 +135,7 @@ class ScoreProfile:
         for idx, search in enumerate(search_list_menu):
             counter = SearchDao(self.database).search_counter_by_url_filter(search.url_filter)
             option_number = idx + 1
-            text = f"""{bcolors.BOLD}[{option_number}]{bcolors.ENDC} {bcolors.UNDERLINE}({search.datetime}){bcolors.ENDC} - {search.text_filter} ({counter} records)\n"""
+            text = text_menu_score.format(option_number, search.datetime, search.text_filter, counter)
             dict_result[option_number] = {
                 "text": text,
                 "condition_sql": search.url_filter
@@ -143,14 +144,14 @@ class ScoreProfile:
         number += 1
         counter_all = SearchDao(self.database).search_counter_is_not_null()
         dict_result[number] = {
-            "text": f"{bcolors.BOLD}[{number}]{bcolors.ENDC} Export all ({counter_all}) database records.\n",
+            "text": text_menu_score_all.format(number, counter_all),
             "condition_sql": None
         }
-        text_menu = f"{string_space}{bcolors.HEADER}########## Please choose your NUMBER option (only the last FIVE): ##########{bcolors.ENDC}\n"
+        text_menu = text_menu_score_header.format(string_space, bcolors.HEADER, bcolors.ENDC)
         for value in dict_result.values():
             text_menu = text_menu + f"{string_space}{value['text'].title()}"
-        text_menu = text_menu + f"{string_space}{bcolors.HEADER}#######################################################{bcolors.ENDC}\n"
-        text_menu = text_menu + f"{string_space}{bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}"
+        text_menu = text_menu + text_menu_score_header_end.format(string_space, bcolors.HEADER, bcolors.ENDC)
+        text_menu = text_menu + text_menu_score_option.format(string_space, bcolors.BOLD, bcolors.CYAN, bcolors.ENDC, bcolors.ENDC)
         return dict_result, text_menu
 
     def __list_person(self, condition_sql):
@@ -261,9 +262,9 @@ class ScoreProfile:
         self.__expand_columns(columns_export_size, sheet)
         name_file = datetime.datetime.now().strftime("%m_%d_%Y_%H%M%S")
         file_path = f"C:\\scrapingLinkedinProfiles\\export\\{name_file}.xlsx"
-        print(f"\n{bcolors.BLUE}Waiting export XLS...{bcolors.ENDC}")
+        print(text_waiting_export_xls)
         workbook.save(file_path)
-        print(f"\n{bcolors.GREEN}Export XLS Finished!{bcolors.ENDC}: {file_path}")
+        print(text_export_finished.format(bcolors.GREEN, bcolors.ENDC, file_path))
         self.__open_file(file_path)
         winsound.MessageBeep()
 

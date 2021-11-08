@@ -1,6 +1,5 @@
 .idea/
 .build/
-.dist/
 database.db
 logs.txt
 *.pyc
