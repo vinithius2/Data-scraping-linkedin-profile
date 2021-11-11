@@ -32,7 +32,7 @@ def main():
     """
     print(text_logo)
     __create_directory()
-    database.create_tables_if_not_exists()
+    database.verify_migrations()
     try:
         driver = __config()
         print(text_waiting_login)

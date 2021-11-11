@@ -1,6 +1,12 @@
 import os
 import sqlite3
 from pathlib import Path
+from sqlite3 import OperationalError
+
+from database.dao.MigrationDao import MigrationDao
+from database.migrations.migration_0 import migration_0
+from models.Migration import Migration
+from utils.log_erro import log_erro
 
 
 class Database:
@@ -8,6 +14,11 @@ class Database:
         self.path = self.__create_directory()
         self.connection = sqlite3.connect(os.path.join(self.path, 'database.db'))
         self.cursor_db = self.connection.cursor()
+        self.new_version = 1
+        self.old_version = self.__get_user_version()
+        self.list_migration = [
+            migration_0
+        ]
 
     _instances = {}
 
@@ -18,6 +29,9 @@ class Database:
         return cls._instances[cls]
 
     def __create_directory(self):
+        """
+        Cria diretório absoluto se não existir.
+        """
         path_parent = "scrapingLinkedinProfiles"
         path_absolute = Path("/")
         directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
@@ -27,54 +41,54 @@ class Database:
         return directory_database
 
     def __create_directory_database(self, path_absolute, directory_main):
+        """
+        Cria diretório do banco de dados se não existir.
+        """
         path_parent_database = os.path.join(directory_main, "database")
         directory_database = os.path.join(path_absolute.parent.absolute(), path_parent_database)
         if not os.path.exists(directory_database):
             os.mkdir(directory_database)
         return directory_database
 
-    def create_tables_if_not_exists(self):
-        self.__create_table_person()
-        self.__create_table_experience()
-        self.__create_table_certification()
-        self.__create_table_education()
-        self.__create_table_language()
-        self.__create_table_skill()
-        self.__create_table_search()
-
-    def __create_table_person(self):
-        query = """CREATE TABLE IF NOT EXISTS person (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, subtitle TEXT, 
-        local TEXT, url TEXT, email TEXT, phone_number TEXT, about TEXT, UNIQUE(url))"""
+    def __get_user_version(self):
+        """
+        Pega a versão do banco
+        """
+        query = """PRAGMA user_version"""
         self.cursor_db.execute(query)
+        user_version = self.cursor_db.fetchone()
+        return user_version[0]
 
-    def __create_table_experience(self):
-        query = """CREATE TABLE IF NOT EXISTS experience (id INTEGER PRIMARY KEY AUTOINCREMENT, company TEXT, 
-        position TEXT, years NUMBER, months NUMBER, description TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES 
-        person(id)) """
-        self.cursor_db.execute(query)
+    def __set_user_version(self):
+        """
+        Atualiza a versão do banco
+        """
+        self.cursor_db.execute(f"PRAGMA user_version = {self.new_version}")
+        self.connection.commit()
 
-    def __create_table_education(self):
-        query = """CREATE TABLE IF NOT EXISTS education (id INTEGER PRIMARY KEY AUTOINCREMENT, college TEXT, 
-        level TEXT, course TEXT, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
-        self.cursor_db.execute(query)
+    def __migrations(self):
+        """
+        Executa as migrations.
+        """
+        if self.new_version > self.old_version:
+            try:
+                for migration in self.list_migration:
+                    result = MigrationDao(self).select_by_name(migration.__name__)
+                    if not result:
+                        migration(self.cursor_db).start()
+                        migration = Migration(migration.__name__, self.new_version)
+                        MigrationDao(self, migration).insert()
+                self.__set_user_version()
+            except OperationalError as e:
+                log_erro(e)
+                if e.args[0] == 'no such table: migration':
+                    migration_0(self.cursor_db).start()
+                    migration = Migration(migration_0.__name__, self.new_version)
+                    MigrationDao(self, migration).insert()
+                    self.__migrations()
 
-    def __create_table_certification(self):
-        query = """CREATE TABLE IF NOT EXISTS certification (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT,
-        person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
-        self.cursor_db.execute(query)
-
-    def __create_table_language(self):
-        query = """CREATE TABLE IF NOT EXISTS language (id INTEGER PRIMARY KEY AUTOINCREMENT, language TEXT, level TEXT, 
-        person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
-        self.cursor_db.execute(query)
-
-    def __create_table_skill(self):
-        query = """CREATE TABLE IF NOT EXISTS skill (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, 
-        indications NUMBER, verify INTEGER, person_id INTEGER, FOREIGN KEY(person_id) REFERENCES person(id))"""
-        self.cursor_db.execute(query)
-
-    def __create_table_search(self):
-        query = """CREATE TABLE IF NOT EXISTS search (id INTEGER PRIMARY KEY AUTOINCREMENT, url_filter TEXT, 
-        url_profile TEXT, datetime TEXT, person_id INTEGER, text_filter TEXT, FOREIGN KEY(person_id) REFERENCES person(id),
-        UNIQUE(url_filter, url_profile))"""
-        self.cursor_db.execute(query)
+    def verify_migrations(self):
+        """
+        Inicia validação de migrations
+        """
+        self.__migrations()
