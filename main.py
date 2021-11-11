@@ -30,10 +30,10 @@ def main():
     """
     Iniciar aplicação...
     """
-    print(text_logo)
-    __create_directory()
-    database.verify_migrations()
     try:
+        print(text_logo)
+        __create_directory()
+        database.verify_migrations()
         driver = __config()
         print(text_waiting_login)
         winsound.Beep(250, 100)
@@ -47,6 +47,10 @@ def main():
         sleep(25)
         print(text_closed_text)
         sleep(6)
+        database.cryptography()
+    except Exception as e:
+        log_erro(e)
+        database.cryptography()
 
 
 def __login(driver):
@@ -225,6 +229,7 @@ def __close(driver):
     print(text_closed)
     __music_terminator()
     driver.close()
+    database.cryptography()
     sys.exit()
 
 
