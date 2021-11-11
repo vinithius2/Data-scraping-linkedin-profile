@@ -23,8 +23,8 @@ class PersonDao:
             SELECT COUNT(*) AS counter FROM person
         """
         self.database.cursor_db.execute(query)
-        rows = self.database.cursor_db.fetchall()
-        return rows[0][0]
+        rows = self.database.cursor_db.fetchone()
+        return rows[0]
 
     # ------ INSERT ------ #
     def insert(self):

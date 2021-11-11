@@ -153,21 +153,21 @@ class SearchDao:
             SELECT COUNT(*) AS counter FROM search
         """
         self.database.cursor_db.execute(query)
-        rows = self.database.cursor_db.fetchall()
-        return rows[0][0]
+        rows = self.database.cursor_db.fetchone()
+        return rows[0]
 
     def search_counter_is_not_null(self) -> int:
         query = """
             SELECT COUNT(*) AS counter FROM search WHERE person_id IS NOT NULL
         """
         self.database.cursor_db.execute(query)
-        rows = self.database.cursor_db.fetchall()
-        return rows[0][0]
+        rows = self.database.cursor_db.fetchone()
+        return rows[0]
 
     def search_counter_by_url_filter(self, url_filter) -> int:
         query = """
             SELECT COUNT(*) AS counter FROM search WHERE url_filter = ? AND person_id IS NOT NULL
         """
         self.database.cursor_db.execute(query, [url_filter])
-        rows = self.database.cursor_db.fetchall()
-        return rows[0][0]
+        rows = self.database.cursor_db.fetchone()
+        return rows[0]
