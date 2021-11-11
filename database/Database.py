@@ -1,8 +1,13 @@
 import os
 import sqlite3
+import sys
 from pathlib import Path
-from sqlite3 import OperationalError
+from sqlite3 import OperationalError, DatabaseError
 
+import keyring
+from cryptography.fernet import Fernet
+
+from config import DEBUG
 from database.dao.MigrationDao import MigrationDao
 from database.migrations.migration_0 import migration_0
 from models.Migration import Migration
@@ -15,6 +20,7 @@ class Database:
         self.connection = sqlite3.connect(os.path.join(self.path, 'database.db'))
         self.cursor_db = self.connection.cursor()
         self.new_version = 1
+        self.__generate_credentials()
         self.old_version = self.__get_user_version()
         self.list_migration = [
             migration_0
@@ -27,6 +33,77 @@ class Database:
             instance = super().__call__(*args, **kwargs)
             cls._instances[cls] = instance
         return cls._instances[cls]
+
+    def resource_path(self, relative_path):
+        """ Obtenha o caminho absoluto para o recurso, funciona para dev e para PyInstaller """
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath("__file__")))
+        return os.path.join(base_path, relative_path)
+
+    def cryptography(self):
+        """
+        Efetua a criptografia do arquivo SQLite.
+        """
+        if not DEBUG:
+            if self.__verify_is_encrypted():
+                path_database = os.path.join(self.path, 'database.db')
+                fernet = Fernet(self.__get_credentials())
+                with open(path_database, 'rb') as file:
+                    original = file.read()
+                    encrypted = fernet.encrypt(original)
+                with open(path_database, 'wb') as encrypted_file:
+                    encrypted_file.write(encrypted)
+
+    def decryption(self):
+        """
+        Desfaz a criptografia do arquivo SQLite.
+        """
+        if not DEBUG:
+            if not self.__verify_is_encrypted():
+                path_database = os.path.join(self.path, 'database.db')
+                fernet = Fernet(self.__get_credentials())
+                with open(path_database, 'rb') as file:
+                    encrypted = file.read()
+                    original = fernet.decrypt(encrypted)
+                with open(path_database, 'wb') as dec_file:
+                    dec_file.write(original)
+
+    def __verify_is_encrypted(self):
+        """
+        Verifica se o arquivo SQLite está criptografado ou não.
+        """
+        try:
+            query = """PRAGMA application_id"""
+            self.cursor_db.execute(query)
+            self.cursor_db.fetchone()
+            return True
+        except DatabaseError as e:
+            if e.args[0] == 'file is not a database':
+                return False
+
+    def __get_secret_user(self):
+        secret_username = None
+        try:
+            with open(self.resource_path("secret_username.key"), 'rb') as file:
+                secret_username = file.read().decode('utf-8')
+        except FileNotFoundError as e:
+            log_erro(e)
+        return secret_username
+
+    def __generate_credentials(self):
+        """
+        Gera a chave aleatória de criptografia.
+        """
+        secret_username = self.__get_secret_user()
+        if secret_username and not keyring.get_password("database", secret_username):
+            key = Fernet.generate_key()
+            keyring.set_password("database", secret_username, key.decode('utf-8'))
+
+    def __get_credentials(self):
+        """
+        Retorna a chave de criptografia.
+        """
+        secret_username = self.__get_secret_user()
+        return keyring.get_password("database", secret_username)
 
     def __create_directory(self):
         """
@@ -54,17 +131,21 @@ class Database:
         """
         Pega a versão do banco
         """
+        self.decryption()
         query = """PRAGMA user_version"""
         self.cursor_db.execute(query)
         user_version = self.cursor_db.fetchone()
+        self.cryptography()
         return user_version[0]
 
     def __set_user_version(self):
         """
         Atualiza a versão do banco
         """
+        self.decryption()
         self.cursor_db.execute(f"PRAGMA user_version = {self.new_version}")
         self.connection.commit()
+        self.cryptography()
 
     def __migrations(self):
         """
@@ -91,4 +172,6 @@ class Database:
         """
         Inicia validação de migrations
         """
+        self.decryption()
         self.__migrations()
+        self.cryptography()
