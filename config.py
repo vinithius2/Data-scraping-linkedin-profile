@@ -1,6 +1,7 @@
 # Urls
 URL_LOGIN = 'https://www.linkedin.com/uas/login'
 URL_BASE_PEOPLE = 'https://www.linkedin.com/search/results/people/'
+URL_RELEASES = 'https://api.github.com/repos/vinithius2/Data-scraping-linkedin-profile/releases'
 # Menu
 SEARCH_PROFILES = 1
 SCRAPING_PROFILES = 2

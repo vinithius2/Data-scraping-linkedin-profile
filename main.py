@@ -1,13 +1,19 @@
 import os
 import sys
+import webbrowser
 import winsound
+from datetime import datetime
 from pathlib import Path
 from time import sleep
-import webbrowser
+
+import colorama
+import requests
+from requests.exceptions import ConnectionError as ConnectionErrorVersion
 from selenium import webdriver
 from selenium.common.exceptions import InvalidArgumentException, WebDriverException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 from config import *
 from database.Database import Database
@@ -18,8 +24,6 @@ from scraping.ScrapingProfile import ScrapingProfile
 from scraping.ScrapingSearch import ScrapingSearch
 from utils.log_erro import log_erro
 from utils.texts import *
-from webdriver_manager.chrome import ChromeDriverManager
-import colorama
 
 database = Database()
 os.system('cls')
@@ -32,6 +36,7 @@ def main():
     """
     try:
         print(text_logo)
+        __verify_version()
         __create_directory()
         database.verify_migrations()
         driver = __config()
@@ -48,8 +53,17 @@ def main():
         print(text_closed_text)
         sleep(6)
         database.cryptography()
+    except ConnectionError as e:
+        log_erro(e)
+        print(text_connect_error)
+        database.cryptography()
+    except ConnectionErrorVersion as e:
+        log_erro(e)
+        print(text_connect_error)
+        database.cryptography()
     except Exception as e:
         log_erro(e)
+        print(text_unknown_error)
         database.cryptography()
 
 
@@ -302,6 +316,52 @@ def __login_debug(driver):
     password.send_keys(password_text)
     log_in_button = driver.find_element_by_class_name('from__button--floating')
     log_in_button.click()
+
+
+def __verify_version():
+    """
+    Gera uma notificação em caso de nova versão.
+    """
+    try:
+        response = requests.get(URL_RELEASES)
+        if response.status_code == 200:
+            last_release = response.json()[-1]
+            if last_release and 'tag_name' in last_release and 'name' in last_release:
+                tag = last_release['tag_name'].replace("v", "")
+                name = last_release['name']
+                if float(tag) > VERSION:
+                    if 'assets' in last_release and len(last_release['assets']) >= 1:
+                        asset_name_file = last_release['assets'][-1]['name']
+                        asset_browser_download_url = last_release['assets'][-1]['browser_download_url']
+                        asset_updated_at = last_release['assets'][-1]['updated_at']
+                        updated_at = datetime.strptime(asset_updated_at.replace("Z", ""), '%Y-%m-%dT%H:%M:%S')
+                        print(text_new_version_start.format(
+                                bcolors.HEADER,
+                                bcolors.ENDC,
+                                bcolors.BOLD,
+                                bcolors.ENDC,
+                                bcolors.HEADER,
+                                bcolors.ENDC,
+                                updated_at.strftime("%B %d, %Y"),
+                                bcolors.GREEN,
+                                tag,
+                                bcolors.ENDC,
+                                bcolors.RED,
+                                VERSION,
+                                bcolors.ENDC,
+                                name,
+                                bcolors.HEADER,
+                                bcolors.ENDC,
+                                asset_name_file,
+                                asset_browser_download_url,
+                                bcolors.HEADER,
+                                bcolors.ENDC,
+                            )
+                        )
+    except IndexError as e:
+        log_erro(e)
+    except ValueError as e:
+        log_erro(e)
 
 
 def __music_terminator():

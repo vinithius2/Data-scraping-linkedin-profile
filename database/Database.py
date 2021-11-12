@@ -2,7 +2,8 @@ import os
 import sqlite3
 import sys
 from pathlib import Path
-from sqlite3 import OperationalError, DatabaseError
+from sqlite3 import DatabaseError
+from sqlite3 import OperationalError
 
 import keyring
 from cryptography.fernet import Fernet

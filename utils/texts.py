@@ -57,6 +57,19 @@ text_option = f"""
     {bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}
     """
 
+text_new_version_start = """
+    {}################################ NOTIFICATION ################################{}
+    #          {}THERE IS A NEW VERSION OF Scraping Linkedin Profile.{}              #
+    {}##############################################################################{}
+    Release date: {}                                                               
+    New version: {}{}{} > Your version: {}{}{}                                     
+    Name release: {}                                                               
+    {}################################# DOWNLOAD ###################################{}
+    File: {}                                                                       
+    Download: {}                                                                   
+    {}##############################################################################{}
+    """
+
 text_url_filter = f"""
     {bcolors.UNDERLINE}Example of URL:{bcolors.ENDC} https://www.linkedin.com/search/results/people/?keywords=desenvolvedor&origin=FACETED_SEARCH&position=1&searchId=0e12d907-9848-40fb-8bc4-d0ec3c3c48c0&sid=nO4\n\n
     {bcolors.BOLD}{bcolors.CYAN}Add URL filter for Linkedin Profiles:{bcolors.ENDC}{bcolors.ENDC}
@@ -257,5 +270,13 @@ text_login_url_base = f"""\n
     {bcolors.UNDERLINE}You need to do the linkedin people search, example base URL:{bcolors.ENDC}\n
     Ex: https://www.linkedin.com/search/results/people/
     {bcolors.HEADER}###########################################################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
+text_connect_error = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}########### ATTEMTION ###########{bcolors.ENDC}
+    {bcolors.FAIL} You need an internet connection!{bcolors.ENDC}
+    {bcolors.HEADER}#################################{bcolors.ENDC}\n
     {bcolors.ENDC}
     """
