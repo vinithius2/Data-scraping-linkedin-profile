@@ -1,5 +1,7 @@
 .idea/
+.dist/
 .build/
 database.db
+secret_username.key
 logs.txt
 *.pyc

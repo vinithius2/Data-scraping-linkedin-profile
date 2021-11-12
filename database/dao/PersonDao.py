@@ -19,11 +19,13 @@ class PersonDao:
         self.person_id = None
 
     def person_counter(self) -> int:
+        self.database.decryption()
         query = """
             SELECT COUNT(*) AS counter FROM person
         """
         self.database.cursor_db.execute(query)
         rows = self.database.cursor_db.fetchone()
+        self.database.cryptography()
         return rows[0]
 
     # ------ INSERT ------ #
@@ -44,6 +46,7 @@ class PersonDao:
         return exist
 
     def __insert(self):
+        self.database.decryption()
         self.person_id = self.__insert_person(self.person)
         if self.person_id:
             for certification in self.person.certifications:
@@ -57,7 +60,7 @@ class PersonDao:
             for experience_list in self.person.experiences:
                 for experience in experience_list:
                     self.__insert_experience(experience, self.person_id)
-
+        self.database.cryptography()
 
     def __insert_person(self, person):
         try:
@@ -108,33 +111,40 @@ class PersonDao:
 
     # ------ SELECT ------ #
     def select_people(self):
+        self.database.decryption()
         query = """
             SELECT id, name, subtitle, local, about, url, email, phone_number FROM person
         """
         self.database.cursor_db.execute(query)
         rows = self.database.cursor_db.fetchall()
         person_list = self.__get_list_person(rows)
+        self.database.cryptography()
         return person_list
 
     def select_people_by_name(self):
+        self.database.decryption()
         query = """
             SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE name = ?
         """
         self.database.cursor_db.execute(query, [self.person.name])
         rows = self.database.cursor_db.fetchall()
         person_list = self.__get_list_person(rows)
+        self.database.cryptography()
         return person_list
 
     def select_people_by_url(self, url):
+        self.database.decryption()
         query = """
             SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE url = ?
         """
         self.database.cursor_db.execute(query, [url])
         rows = self.database.cursor_db.fetchall()
         person_list = self.__get_list_person(rows)
+        self.database.cryptography()
         return person_list
 
     def select_people_by_id(self, person_id):
+        self.database.decryption()
         query = """
             SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE id = ?
         """
@@ -143,15 +153,18 @@ class PersonDao:
         person = None
         if rows:
             person = self.__get_list_person(rows)[0]
+        self.database.cryptography()
         return person
 
     def select_people_by_list_ids(self, list_ids):
+        self.database.decryption()
         query = """
             SELECT id, name, subtitle, local, about, url, email, phone_number FROM person WHERE id IN {}
         """
         self.database.cursor_db.execute(query.format(tuple(list_ids)))
         rows = self.database.cursor_db.fetchall()
         person_list = self.__get_list_person(rows)
+        self.database.cryptography()
         return person_list
 
     def __get_list_person(self, rows):
