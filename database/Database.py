@@ -177,4 +177,6 @@ class Database:
         """
         Inicia validação de migrations
         """
+        self.decryption()
         self.__migrations()
+        self.cryptography()

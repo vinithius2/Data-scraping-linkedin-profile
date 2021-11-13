@@ -60,10 +60,9 @@ def main():
         log_erro(e)
         print(text_connect_error)
         database.cryptography()
-    # except Exception as e:
-    #     log_erro(e)
-    #     print(text_unknown_error)
-    #     database.cryptography()
+    except Exception as e:
+        log_erro(e)
+        database.cryptography()
 
 
 def __login(driver):

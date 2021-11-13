@@ -93,7 +93,7 @@ _**PT:**_ Use o terminal com a virtualenv ativada e com as bibliotecas instalada
 _**ENG:**_ Use the terminal with virtualenv enabled and the libraries installed and run the following script:
 
 ~~~python
-pyinstaller --onefile --console --icon=favicon_likedin_scraping.ico --name=Linkedin_Scraping_Profile_v0.0 main.py
+pyinstaller main.spec
 ~~~
 
 _**PT:**_ O executável se encontrará na pasta **dist/**

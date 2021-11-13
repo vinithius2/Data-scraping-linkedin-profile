@@ -47,13 +47,13 @@ class SearchDao:
         rows = self.database.cursor_db.fetchall()
         for row in rows:
             search_list.append(Search(
-                    id_search=row[0],
-                    url_filter=row[1],
-                    url_profile=row[2],
-                    text_filter=row[3],
-                    person_id=row[4],
-                    datetime=row[5]
-                )
+                id_search=row[0],
+                url_filter=row[1],
+                url_profile=row[2],
+                text_filter=row[3],
+                person_id=row[4],
+                datetime=row[5]
+              )
             )
         self.database.cryptography()
         return search_list
@@ -68,13 +68,13 @@ class SearchDao:
         rows = self.database.cursor_db.fetchall()
         for row in rows:
             search_list.append(Search(
-                    id_search=row[0],
-                    url_filter=row[1],
-                    url_profile=row[2],
-                    text_filter=row[3],
-                    person_id=row[4],
-                    datetime=row[5]
-                )
+                id_search=row[0],
+                url_filter=row[1],
+                url_profile=row[2],
+                text_filter=row[3],
+                person_id=row[4],
+                datetime=row[5]
+            )
             )
         self.database.cryptography()
         return search_list
@@ -89,17 +89,17 @@ class SearchDao:
         rows = self.database.cursor_db.fetchall()
         for row in rows:
             search_list.append(Search(
-                    id_search=row[0],
-                    url_filter=row[1],
-                    url_profile=row[2],
-                    text_filter=row[3],
-                    person_id=row[4],
-                    datetime=row[5]
-                )
+                id_search=row[0],
+                url_filter=row[1],
+                url_profile=row[2],
+                text_filter=row[3],
+                person_id=row[4],
+                datetime=row[5]
+              )
             )
         self.database.cryptography()
         return search_list
-    
+
     def select_search_by_url_filter(self, url_filter):
         self.database.decryption()
         search_list = list()
@@ -111,13 +111,13 @@ class SearchDao:
         rows = self.database.cursor_db.fetchall()
         for row in rows:
             search_list.append(Search(
-                    id_search=row[0],
-                    url_filter=row[1],
-                    url_profile=row[2],
-                    text_filter=row[3],
-                    person_id=row[4],
-                    datetime=row[5]
-                )
+                id_search=row[0],
+                url_filter=row[1],
+                url_profile=row[2],
+                text_filter=row[3],
+                person_id=row[4],
+                datetime=row[5]
+              )
             )
         self.database.cryptography()
         return search_list
@@ -133,13 +133,13 @@ class SearchDao:
         rows = self.database.cursor_db.fetchall()
         for row in rows:
             search_list.append(Search(
-                    id_search=row[0],
-                    url_filter=row[1],
-                    url_profile=row[2],
-                    text_filter=row[3],
-                    person_id=row[4],
-                    datetime=row[5]
-                )
+                id_search=row[0],
+                url_filter=row[1],
+                url_profile=row[2],
+                text_filter=row[3],
+                person_id=row[4],
+                datetime=row[5]
+              )
             )
         self.database.cryptography()
         return search_list
@@ -154,13 +154,13 @@ class SearchDao:
         rows = self.database.cursor_db.fetchall()
         for row in rows:
             search_list.append(Search(
-                    id_search=row[0],
-                    url_filter=row[1],
-                    url_profile=row[2],
-                    text_filter=row[3],
-                    person_id=row[4],
-                    datetime=row[5]
-                )
+                id_search=row[0],
+                url_filter=row[1],
+                url_profile=row[2],
+                text_filter=row[3],
+                person_id=row[4],
+                datetime=row[5]
+              )
             )
         self.database.cryptography()
         return search_list
