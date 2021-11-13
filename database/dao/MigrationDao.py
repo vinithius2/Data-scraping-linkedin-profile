@@ -36,19 +36,3 @@ class MigrationDao:
             )
         self.database.cryptography()
         return migration
-
-    def select(self):
-        self.database.decryption()
-        migration_list = list()
-        query = """SELECT id, name_file, user_version, datetime FROM migration ORDER BY user_version DESC"""
-        self.database.cursor_db.execute(query)
-        rows = self.database.cursor_db.fetchall()
-        for row in rows:
-            migration_list.append(Migration(
-                    name_file=row[1],
-                    user_version=row[2],
-                    datetime=row[3]
-                )
-            )
-        self.database.cryptography()
-        return migration_list

@@ -67,19 +67,18 @@ class ScrapingSearch:
                     show_url_profile = f"{parsed_url.hostname}{parsed_url.path}"
                     if profile.find('span'):
                         name = profile.find('span').text.strip()
-                        is_none = SearchDao(self.database, Search(
+                        is_not_none = SearchDao(self.database, Search(
                             url_filter=self.url_filter,
                             url_profile=url_profile,
                             text_filter=captured_value
                         )).insert_search()
                         count += 1
-                        if is_none:
+                        if is_not_none:
                             print(text_count_scraping_search.format(count, bcolors.BOLD, name, bcolors.ENDC,
                                                                     bcolors.BLUE, show_url_profile, bcolors.ENDC))
                         else:
                             print(text_count_scraping_search_exist.format(count, bcolors.BOLD, name, bcolors.ENDC,
                                                                           bcolors.WARNING, bcolors.ENDC))
-                            """    ({}) {}{}{} - {}THERE IS REGISTRATION!{}"""
                     else:
                         print(text_out_of_your_network.format(bcolors.RED, bcolors.BOLD, bcolors.ENDC, bcolors.ENDC,
                                                               bcolors.BLUE, show_url_profile, bcolors.ENDC))

@@ -280,3 +280,11 @@ text_connect_error = f"""\n
     {bcolors.HEADER}#################################{bcolors.ENDC}\n
     {bcolors.ENDC}
     """
+
+text_database_error = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}############ ATTEMTION ############{bcolors.ENDC}
+    {bcolors.FAIL} There is a problem in your database!{bcolors.ENDC}
+    {bcolors.HEADER}###################################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """

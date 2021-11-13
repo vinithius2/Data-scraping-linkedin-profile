@@ -1,19 +1,16 @@
 import os
 import sys
-import webbrowser
 import winsound
 from datetime import datetime
 from pathlib import Path
 from time import sleep
-
-import colorama
+import webbrowser
 import requests
 from requests.exceptions import ConnectionError as ConnectionErrorVersion
 from selenium import webdriver
 from selenium.common.exceptions import InvalidArgumentException, WebDriverException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 
 from config import *
 from database.Database import Database
@@ -24,6 +21,8 @@ from scraping.ScrapingProfile import ScrapingProfile
 from scraping.ScrapingSearch import ScrapingSearch
 from utils.log_erro import log_erro
 from utils.texts import *
+from webdriver_manager.chrome import ChromeDriverManager
+import colorama
 
 database = Database()
 os.system('cls')
@@ -61,10 +60,10 @@ def main():
         log_erro(e)
         print(text_connect_error)
         database.cryptography()
-    except Exception as e:
-        log_erro(e)
-        print(text_unknown_error)
-        database.cryptography()
+    # except Exception as e:
+    #     log_erro(e)
+    #     print(text_unknown_error)
+    #     database.cryptography()
 
 
 def __login(driver):
@@ -320,7 +319,7 @@ def __login_debug(driver):
 
 def __verify_version():
     """
-    Gera uma notificação em caso de nova versão.
+    Gera notificação para atualização em caso de nova versão.
     """
     try:
         response = requests.get(URL_RELEASES)

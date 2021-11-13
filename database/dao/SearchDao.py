@@ -26,6 +26,7 @@ class SearchDao:
             self.database.cryptography()
             return search_id
         except IntegrityError as e:
+            self.database.cryptography()
             log_erro(e)
             return None
 
