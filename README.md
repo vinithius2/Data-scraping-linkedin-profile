@@ -1,4 +1,4 @@
-_Download V1.0:_ https://github.com/vinithius2/scraping-data-linkedin-profile/raw/main/dist/Linkedin_Scraping_Profile_v1.0.zip
+_Download V1.1:_ https://github.com/vinithius2/Data-scraping-linkedin-profile/releases/download/v1.1/Linkedin.Scraping.Profile.v1.1.exe
 
 # Sobre (About)
 _**PT:**_ Essa aplicação tem como objetivo gerar um relatório inteligente sobre possíveis candidatos a vagas de emprego baseando-se em um filtro de tecnologias e por um cálculo ponderado para cada campo do perfil do Linkedin.
