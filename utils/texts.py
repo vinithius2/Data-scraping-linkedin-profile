@@ -68,6 +68,9 @@ text_new_version_start = """
     File: {}                                                                       
     Download: {}                                                                   
     {}##############################################################################{}
+    Obs: After downloading the new EXE you will need to delete the EXE from the pre-
+    vious version to avoid problems.
+    {}##############################################################################{}
     """
 
 text_url_filter = f"""

@@ -366,6 +366,8 @@ def __verify_version():
                                 asset_browser_download_url,
                                 bcolors.HEADER,
                                 bcolors.ENDC,
+                                bcolors.HEADER,
+                                bcolors.ENDC,
                             )
                         )
     except IndexError as e:
