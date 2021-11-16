@@ -46,7 +46,18 @@ def main():
         __choose(driver)
     except WebDriverException as e:
         winsound.Beep(250, 100)
-        print(text_chrome_install)
+        if exception_cannot_find in e.msg:
+            print(text_chrome_install.format(
+                    bcolors.FAIL, bcolors.BOLD, text_chrome_install_text_cannot_find, bcolors.ENDC, bcolors.ENDC,
+                    bcolors.BLUE, bcolors.ENDC, bcolors.FAIL, bcolors.BOLD, bcolors.ENDC, bcolors.ENDC
+                )
+            )
+        else:
+            print(text_chrome_install_closed.format(
+                    bcolors.FAIL, bcolors.BOLD, e, bcolors.ENDC, bcolors.ENDC, bcolors.BLUE, bcolors.ENDC, bcolors.FAIL,
+                    bcolors.BOLD, bcolors.ENDC, bcolors.ENDC
+                )
+            )
         log_erro(e)
         sleep(25)
         print(text_closed_text)
@@ -60,10 +71,10 @@ def main():
         log_erro(e)
         print(text_connect_error)
         database.cryptography()
-    # except Exception as e:
-    #     log_erro(e)
-    #     print(text_unknown_error)
-    #     database.cryptography()
+    except Exception as e:
+        log_erro(e)
+        print(text_unknown_error)
+        database.cryptography()
 
 
 def __login(driver):

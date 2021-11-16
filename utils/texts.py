@@ -217,14 +217,32 @@ text_profile_registered = """    ({}/{}) {}{} {}REGISTERED{}{}: {}{}{}"""
 
 text_count_scraping_search_exist = """    ({}) {}{}{} - {}THERE IS REGISTRATION!{}"""
 
-text_chrome_install = f""" 
-    {bcolors.FAIL}{bcolors.BOLD}################################################## ATTEMTION ###################################################\n
-    Chrome closed before the application closed or this computer does not have the Chrome browser, for it to work co-
-    rrectly, do not close Chrome at runtime or do the proper installation.
-    
-    Installation required: {bcolors.ENDC}{bcolors.ENDC} {bcolors.BLUE}https://www.google.com/chrome/{bcolors.ENDC}\n
-    {bcolors.FAIL}{bcolors.BOLD}################################################################################################################{bcolors.ENDC}{bcolors.ENDC}
+text_chrome_install = """ 
+    {}{}################################################## ATTEMTION ###################################################\n
+    {}
+
+    You need installation: {}{} {}https://www.google.com/chrome/{}\n
+    {}{}################################################################################################################{}{}
     """
+
+text_chrome_install_closed = """ 
+    {}{}################################################## ATTEMTION ###################################################\n
+    {}
+
+    Obs: Chrome can't close before the app is closed, don't close Chrome while it's running.
+
+    May need installation or upgrade: {}{} {}https://www.google.com/chrome/{}\n
+    {}{}################################################################################################################{}{}
+    """
+
+text_chrome_install_text_closed = f"""
+    Chrome closed before the application closed, do not close Chrome at runtime or do the 
+    proper installation."""
+
+text_chrome_install_text_cannot_find = f"""
+    This computer does not have the Chrome browser, for it to work correctly."""
+
+exception_cannot_find = "unknown error: cannot find Chrome binary"
 
 text_error_score = f"""\n
     {bcolors.FAIL}
