@@ -57,6 +57,22 @@ text_option = f"""
     {bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}
     """
 
+text_new_version_start = """
+    {}################################ NOTIFICATION ################################{}
+    #          {}THERE IS A NEW VERSION OF Scraping Linkedin Profile.{}              #
+    {}##############################################################################{}
+    Release date: {}                                                               
+    New version: {}{}{} > Your version: {}{}{}                                     
+    Name release: {}                                                               
+    {}################################# DOWNLOAD ###################################{}
+    File: {}                                                                       
+    Download: {}                                                                   
+    {}##############################################################################{}
+    Obs: After downloading the new EXE you will need to delete the EXE from the pre-
+    vious version to avoid problems.
+    {}##############################################################################{}
+    """
+
 text_url_filter = f"""
     {bcolors.UNDERLINE}Example of URL:{bcolors.ENDC} https://www.linkedin.com/search/results/people/?keywords=desenvolvedor&origin=FACETED_SEARCH&position=1&searchId=0e12d907-9848-40fb-8bc4-d0ec3c3c48c0&sid=nO4\n\n
     {bcolors.BOLD}{bcolors.CYAN}Add URL filter for Linkedin Profiles:{bcolors.ENDC}{bcolors.ENDC}
@@ -204,14 +220,32 @@ text_profile_registered = """    ({}/{}) {}{} {}REGISTERED{}{}: {}{}{}"""
 
 text_count_scraping_search_exist = """    ({}) {}{}{} - {}THERE IS REGISTRATION!{}"""
 
-text_chrome_install = f""" 
-    {bcolors.FAIL}{bcolors.BOLD}################################################## ATTEMTION ###################################################\n
-    Chrome closed before the application closed or this computer does not have the Chrome browser, for it to work co-
-    rrectly, do not close Chrome at runtime or do the proper installation.
-    
-    Installation required: {bcolors.ENDC}{bcolors.ENDC} {bcolors.BLUE}https://www.google.com/chrome/{bcolors.ENDC}\n
-    {bcolors.FAIL}{bcolors.BOLD}################################################################################################################{bcolors.ENDC}{bcolors.ENDC}
+text_chrome_install = """ 
+    {}{}################################################## ATTEMTION ###################################################\n
+    {}
+
+    You need installation: {}{} {}https://www.google.com/chrome/{}\n
+    {}{}################################################################################################################{}{}
     """
+
+text_chrome_install_closed = """ 
+    {}{}################################################## ATTEMTION ###################################################\n
+    {}
+
+    Obs: Chrome can't close before the app is closed, don't close Chrome while it's running.
+
+    May need installation or upgrade: {}{} {}https://www.google.com/chrome/{}\n
+    {}{}################################################################################################################{}{}
+    """
+
+text_chrome_install_text_closed = f"""
+    Chrome closed before the application closed, do not close Chrome at runtime or do the 
+    proper installation."""
+
+text_chrome_install_text_cannot_find = f"""
+    This computer does not have the Chrome browser, for it to work correctly."""
+
+exception_cannot_find = "unknown error: cannot find Chrome binary"
 
 text_error_score = f"""\n
     {bcolors.FAIL}
@@ -257,5 +291,21 @@ text_login_url_base = f"""\n
     {bcolors.UNDERLINE}You need to do the linkedin people search, example base URL:{bcolors.ENDC}\n
     Ex: https://www.linkedin.com/search/results/people/
     {bcolors.HEADER}###########################################################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
+text_connect_error = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}########### ATTEMTION ###########{bcolors.ENDC}
+    {bcolors.FAIL} You need an internet connection!{bcolors.ENDC}
+    {bcolors.HEADER}#################################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
+text_database_error = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}############ ATTEMTION ############{bcolors.ENDC}
+    {bcolors.FAIL} There is a problem in your database!{bcolors.ENDC}
+    {bcolors.HEADER}###################################{bcolors.ENDC}\n
     {bcolors.ENDC}
     """

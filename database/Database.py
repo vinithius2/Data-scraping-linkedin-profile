@@ -2,7 +2,8 @@ import os
 import sqlite3
 import sys
 from pathlib import Path
-from sqlite3 import OperationalError, DatabaseError
+from sqlite3 import DatabaseError
+from sqlite3 import OperationalError
 
 import keyring
 from cryptography.fernet import Fernet
@@ -11,6 +12,7 @@ from config import DEBUG
 from database.dao.MigrationDao import MigrationDao
 from database.migrations.migration_0 import migration_0
 from models.Migration import Migration
+from utils.bcolors import bcolors
 from utils.log_erro import log_erro
 
 
@@ -44,7 +46,7 @@ class Database:
         Efetua a criptografia do arquivo SQLite.
         """
         if not DEBUG:
-            if self.__verify_is_encrypted():
+            if self.__is_sqlite_file():
                 path_database = os.path.join(self.path, 'database.db')
                 fernet = Fernet(self.__get_credentials())
                 with open(path_database, 'rb') as file:
@@ -58,7 +60,7 @@ class Database:
         Desfaz a criptografia do arquivo SQLite.
         """
         if not DEBUG:
-            if not self.__verify_is_encrypted():
+            if not self.__is_sqlite_file():
                 path_database = os.path.join(self.path, 'database.db')
                 fernet = Fernet(self.__get_credentials())
                 with open(path_database, 'rb') as file:
@@ -67,18 +69,21 @@ class Database:
                 with open(path_database, 'wb') as dec_file:
                     dec_file.write(original)
 
-    def __verify_is_encrypted(self):
+    def __is_sqlite_file(self):
         """
         Verifica se o arquivo SQLite está criptografado ou não.
         """
-        try:
-            query = """PRAGMA application_id"""
-            self.cursor_db.execute(query)
-            self.cursor_db.fetchone()
-            return True
-        except DatabaseError as e:
-            if e.args[0] == 'file is not a database':
-                return False
+        path_database = os.path.join(self.path, 'database.db')
+        with open(path_database, 'rb') as file:
+            size = os.path.getsize(file.name)
+            if size > 0:
+                original = file.read()
+                if "SQLite" in str(original):
+                    return True
+                else:
+                    return False
+            else:
+                return True
 
     def __get_secret_user(self):
         secret_username = None
