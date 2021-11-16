@@ -335,7 +335,7 @@ def __verify_version():
     try:
         response = requests.get(URL_RELEASES)
         if response.status_code == 200:
-            last_release = response.json()[-1]
+            last_release = response.json()[0]
             if last_release and 'tag_name' in last_release and 'name' in last_release:
                 tag = last_release['tag_name'].replace("v", "")
                 name = last_release['name']
