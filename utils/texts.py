@@ -53,6 +53,7 @@ text_option = f"""
     {bcolors.BOLD}{bcolors.BLUE}(4){bcolors.ENDC}{bcolors.ENDC} {bcolors.GREEN}^^{bcolors.ENDC} All of the above {bcolors.UNDERLINE}(1,2,3){bcolors.ENDC} {bcolors.GREEN}^^{bcolors.ENDC}.\n
     {bcolors.BOLD}{bcolors.BLUE}(5){bcolors.ENDC}{bcolors.ENDC} {bcolors.BLUE}?{bcolors.ENDC} Tutorial... {bcolors.BLUE}?{bcolors.ENDC}.\n
     {bcolors.BOLD}{bcolors.BLUE}(6){bcolors.ENDC}{bcolors.ENDC} {bcolors.RED}X{bcolors.ENDC} CLOSE this app {bcolors.RED}X{bcolors.ENDC}.\n
+    {bcolors.BOLD}{bcolors.BLUE}(7){bcolors.ENDC}{bcolors.ENDC} {bcolors.RED}CAUTION!{bcolors.ENDC} RESET all datas {bcolors.RED}CAUTION!{bcolors.ENDC}.\n
     {bcolors.HEADER}#######################################################{bcolors.ENDC}\n
     {bcolors.BOLD}{bcolors.CYAN}* Your option (Only numbers)?{bcolors.ENDC}{bcolors.ENDC}
     """
@@ -267,6 +268,13 @@ text_login = f"""
     You need to log in to the browser that was opened, {bcolors.UNDERLINE}Y{bcolors.ENDC} to go and {bcolors.UNDERLINE}N{bcolors.ENDC} to close application.
     {bcolors.HEADER}######################################################################################{bcolors.ENDC}\n
     {bcolors.BOLD}{bcolors.CYAN}* You are logged in? (y/n): {bcolors.ENDC}{bcolors.ENDC}
+    """
+
+text_reset = f"""{bcolors.HEADER}
+    {bcolors.HEADER}########################################################################## ATTEMTION #########################################################################{bcolors.ENDC}
+    Following this operation, your database, logs and spreadsheets that are still in the directory of this software will be permanently deleted from the computer.
+    {bcolors.HEADER}##############################################################################################################################################################{bcolors.ENDC}\n
+    {bcolors.BOLD}{bcolors.CYAN}* Do you want to do this? (y/n): {bcolors.ENDC}{bcolors.ENDC}
     """
 
 text_login_error = f"""\n

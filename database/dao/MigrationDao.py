@@ -1,3 +1,4 @@
+
 from sqlite3 import IntegrityError
 
 from models.Migration import Migration

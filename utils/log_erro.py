@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 from pathlib import Path
 
 
@@ -15,8 +16,10 @@ def __get_directory():
 
 
 def log_erro(e):
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     path_logs = __get_directory()
     now = datetime.datetime.now()
     f = open(path_logs, "a")
-    f.write("[{}] {}\n".format(str(now), e))
+    f.write("[{} - {} - {}] - {}\n".format(str(now), fname, exc_tb.tb_lineno, e))
     f.close()

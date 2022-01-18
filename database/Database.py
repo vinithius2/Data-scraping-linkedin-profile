@@ -2,7 +2,6 @@ import os
 import sqlite3
 import sys
 from pathlib import Path
-from sqlite3 import DatabaseError
 from sqlite3 import OperationalError
 
 import keyring
@@ -12,7 +11,6 @@ from config import DEBUG
 from database.dao.MigrationDao import MigrationDao
 from database.migrations.migration_0 import migration_0
 from models.Migration import Migration
-from utils.bcolors import bcolors
 from utils.log_erro import log_erro
 
 

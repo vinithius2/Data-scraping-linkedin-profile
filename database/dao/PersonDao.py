@@ -1,4 +1,5 @@
 import itertools
+
 from sqlite3 import IntegrityError
 
 from models.Certification import Certification
@@ -99,14 +100,14 @@ class PersonDao:
         query = """INSERT INTO experience (company, position, years, months, description, person_id)  VALUES (?,?,?,
         ?,?,?) """
         self.database.cursor_db.execute(query, [
-                experience.company,
-                experience.position,
-                experience.years,
-                experience.months,
-                experience.description,
-                person_id
-            ]
-        )
+            experience.company,
+            experience.position,
+            experience.years,
+            experience.months,
+            experience.description,
+            person_id
+        ]
+                                        )
         self.database.connection.commit()
 
     # ------ SELECT ------ #
@@ -189,7 +190,7 @@ class PersonDao:
                 skills=skill_list,
                 certifications=certification_list,
                 education=education_list
-                )
+            )
             )
         return person_list
 

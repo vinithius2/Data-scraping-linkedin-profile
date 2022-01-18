@@ -1,3 +1,4 @@
+
 from sqlite3 import IntegrityError
 
 from models.Search import Search
@@ -53,7 +54,7 @@ class SearchDao:
                 text_filter=row[3],
                 person_id=row[4],
                 datetime=row[5]
-              )
+            )
             )
         self.database.cryptography()
         return search_list
@@ -95,7 +96,7 @@ class SearchDao:
                 text_filter=row[3],
                 person_id=row[4],
                 datetime=row[5]
-              )
+            )
             )
         self.database.cryptography()
         return search_list
@@ -117,7 +118,7 @@ class SearchDao:
                 text_filter=row[3],
                 person_id=row[4],
                 datetime=row[5]
-              )
+            )
             )
         self.database.cryptography()
         return search_list
@@ -139,7 +140,7 @@ class SearchDao:
                 text_filter=row[3],
                 person_id=row[4],
                 datetime=row[5]
-              )
+            )
             )
         self.database.cryptography()
         return search_list
@@ -160,7 +161,7 @@ class SearchDao:
                 text_filter=row[3],
                 person_id=row[4],
                 datetime=row[5]
-              )
+            )
             )
         self.database.cryptography()
         return search_list

@@ -1,16 +1,20 @@
 import os
+import shutil
 import sys
+import webbrowser
 import winsound
 from datetime import datetime
 from pathlib import Path
 from time import sleep
-import webbrowser
+
+import colorama
 import requests
 from requests.exceptions import ConnectionError as ConnectionErrorVersion
 from selenium import webdriver
 from selenium.common.exceptions import InvalidArgumentException, WebDriverException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 from config import *
 from database.Database import Database
@@ -21,8 +25,6 @@ from scraping.ScrapingProfile import ScrapingProfile
 from scraping.ScrapingSearch import ScrapingSearch
 from utils.log_erro import log_erro
 from utils.texts import *
-from webdriver_manager.chrome import ChromeDriverManager
-import colorama
 
 database = Database()
 os.system('cls')
@@ -48,15 +50,15 @@ def main():
         winsound.Beep(250, 100)
         if exception_cannot_find in e.msg:
             print(text_chrome_install.format(
-                    bcolors.FAIL, bcolors.BOLD, text_chrome_install_text_cannot_find, bcolors.ENDC, bcolors.ENDC,
-                    bcolors.BLUE, bcolors.ENDC, bcolors.FAIL, bcolors.BOLD, bcolors.ENDC, bcolors.ENDC
-                )
+                bcolors.FAIL, bcolors.BOLD, text_chrome_install_text_cannot_find, bcolors.ENDC, bcolors.ENDC,
+                bcolors.BLUE, bcolors.ENDC, bcolors.FAIL, bcolors.BOLD, bcolors.ENDC, bcolors.ENDC
+            )
             )
         else:
             print(text_chrome_install_closed.format(
-                    bcolors.FAIL, bcolors.BOLD, e, bcolors.ENDC, bcolors.ENDC, bcolors.BLUE, bcolors.ENDC, bcolors.FAIL,
-                    bcolors.BOLD, bcolors.ENDC, bcolors.ENDC
-                )
+                bcolors.FAIL, bcolors.BOLD, e, bcolors.ENDC, bcolors.ENDC, bcolors.BLUE, bcolors.ENDC, bcolors.FAIL,
+                bcolors.BOLD, bcolors.ENDC, bcolors.ENDC
+            )
             )
         log_erro(e)
         sleep(25)
@@ -161,6 +163,8 @@ def __choose(driver):
             __choose(driver)
         if option == CLOSE_APP:
             __close(driver)
+        if option == RESET_APP:
+            __reset(driver)
     except ValueError as e:
         print(text_error)
         log_erro(e)
@@ -314,6 +318,21 @@ def __config():
     return driver
 
 
+def __reset(driver):
+    option = input(text_reset)
+    if option.lower() == 'y':
+        database.connection.close()
+        path_parent = "scrapingLinkedinProfiles"
+        path_absolute = Path("/")
+        directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
+        shutil.rmtree(directory_main)
+    elif option.lower() == 'n':
+        __choose(driver)
+    else:
+        print(text_login_error)
+        __reset(driver)
+
+
 def __login_debug(driver):
     """
     Usado quando estiver em modo Debug, agilizando o Login
@@ -346,29 +365,29 @@ def __verify_version():
                         asset_updated_at = last_release['assets'][-1]['updated_at']
                         updated_at = datetime.strptime(asset_updated_at.replace("Z", ""), '%Y-%m-%dT%H:%M:%S')
                         print(text_new_version_start.format(
-                                bcolors.HEADER,
-                                bcolors.ENDC,
-                                bcolors.BOLD,
-                                bcolors.ENDC,
-                                bcolors.HEADER,
-                                bcolors.ENDC,
-                                updated_at.strftime("%B %d, %Y"),
-                                bcolors.GREEN,
-                                tag,
-                                bcolors.ENDC,
-                                bcolors.RED,
-                                VERSION,
-                                bcolors.ENDC,
-                                name,
-                                bcolors.HEADER,
-                                bcolors.ENDC,
-                                asset_name_file,
-                                asset_browser_download_url,
-                                bcolors.HEADER,
-                                bcolors.ENDC,
-                                bcolors.HEADER,
-                                bcolors.ENDC,
-                            )
+                            bcolors.HEADER,
+                            bcolors.ENDC,
+                            bcolors.BOLD,
+                            bcolors.ENDC,
+                            bcolors.HEADER,
+                            bcolors.ENDC,
+                            updated_at.strftime("%B %d, %Y"),
+                            bcolors.GREEN,
+                            tag,
+                            bcolors.ENDC,
+                            bcolors.RED,
+                            VERSION,
+                            bcolors.ENDC,
+                            name,
+                            bcolors.HEADER,
+                            bcolors.ENDC,
+                            asset_name_file,
+                            asset_browser_download_url,
+                            bcolors.HEADER,
+                            bcolors.ENDC,
+                            bcolors.HEADER,
+                            bcolors.ENDC,
+                        )
                         )
     except IndexError as e:
         log_erro(e)

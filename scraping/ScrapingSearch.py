@@ -61,7 +61,8 @@ class ScrapingSearch:
                 for item in profile_list:
                     profile = item.find('span', {'class': ['entity-result__title-text']})
                     if profile.find('span', {'class': ['visually-hidden']}):
-                        profile.find('span', {'class': ['visually-hidden']}).replaceWith(BeautifulSoup("", "html.parser"))
+                        profile.find('span', {'class': ['visually-hidden']}).replaceWith(
+                            BeautifulSoup("", "html.parser"))
                     url_profile = profile.find('a', {'class': ['app-aware-link']}).attrs['href']
                     parsed_url = urlparse(url_profile)
                     show_url_profile = f"{parsed_url.hostname}{parsed_url.path}"
@@ -100,7 +101,8 @@ class ScrapingSearch:
             if element.is_displayed():
                 container_pages = soup.find('div', {'class': ['artdeco-pagination']})
                 if container_pages:
-                    next_class = container_pages.find('button', {'class': 'artdeco-pagination__button--next'}).attrs['class']
+                    next_class = container_pages.find('button', {'class': 'artdeco-pagination__button--next'}).attrs[
+                        'class']
                     if 'artdeco-button--disabled' in next_class:
                         disable = True
                     page_number = container_pages.find('li', {'class': ['selected']}).text.strip()

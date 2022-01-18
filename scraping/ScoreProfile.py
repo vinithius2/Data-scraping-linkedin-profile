@@ -81,7 +81,8 @@ class ScoreProfile:
             "language_level": None,
             "technologies": dict()
         }
-        self.header_list = ["Media", "URL", "Nome", "Local", "Educação", "Nível", "Experiência", "Email", "Telefone", "Nível de inglês"]
+        self.header_list = ["Media", "URL", "Nome", "Local", "Educação", "Nível", "Experiência", "Email", "Telefone",
+                            "Nível de inglês"]
         self.tech_items = ["Tempo", "Certificações", "Selo Linkedin", "Indicações"]
         self.job_characteristics = {
             "technologies": [],
@@ -151,7 +152,8 @@ class ScoreProfile:
         for value in dict_result.values():
             text_menu = text_menu + f"{string_space}{value['text'].title()}"
         text_menu = text_menu + text_menu_score_header_end.format(string_space, bcolors.HEADER, bcolors.ENDC)
-        text_menu = text_menu + text_menu_score_option.format(string_space, bcolors.BOLD, bcolors.CYAN, bcolors.ENDC, bcolors.ENDC)
+        text_menu = text_menu + text_menu_score_option.format(string_space, bcolors.BOLD, bcolors.CYAN, bcolors.ENDC,
+                                                              bcolors.ENDC)
         return dict_result, text_menu
 
     def __list_person(self, condition_sql):
@@ -229,25 +231,30 @@ class ScoreProfile:
                     if columns[self.TECHNOLOGIES]:
                         for key in self.job_characteristics[self.TECHNOLOGIES]:
                             tech_dict = columns[self.TECHNOLOGIES][key]
-                            cell_number, tempo = self.__set_cell_tempo(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            cell_number, tempo = self.__set_cell_tempo(sheet, tech_dict, row_number, cell_number,
+                                                                       alignment, border)
                             columns_export_size = self.__set_max_size_col(
                                 columns_export_size,
                                 f"{unidecode(key.lower())}_{unidecode(self.tech_items[0].lower())}",
                                 tempo
                             )
-                            cell_number, status_certification = self.__set_cell_certification(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            cell_number, status_certification = self.__set_cell_certification(sheet, tech_dict,
+                                                                                              row_number, cell_number,
+                                                                                              alignment, border)
                             columns_export_size = self.__set_max_size_col(
                                 columns_export_size,
                                 f"{unidecode(key.lower())}_{unidecode(self.tech_items[1].lower())}",
                                 status_certification
                             )
-                            cell_number, status_verify = self.__set_cell_verify(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            cell_number, status_verify = self.__set_cell_verify(sheet, tech_dict, row_number,
+                                                                                cell_number, alignment, border)
                             columns_export_size = self.__set_max_size_col(
                                 columns_export_size,
                                 f"{unidecode(key.lower())}_{unidecode(self.tech_items[2].lower())}",
                                 status_verify
                             )
-                            cell_number, indications = self.__set_cell_indications(sheet, tech_dict, row_number, cell_number, alignment, border)
+                            cell_number, indications = self.__set_cell_indications(sheet, tech_dict, row_number,
+                                                                                   cell_number, alignment, border)
                             columns_export_size = self.__set_max_size_col(
                                 columns_export_size,
                                 f"{unidecode(key.lower())}_{unidecode(self.tech_items[3].lower())}",
@@ -801,15 +808,18 @@ class ScoreProfile:
         Caso exista algum nível profissional, é retornado True, se não, Falso.
         """
         for experience in experience_list:
-            if unidecode(self.SR) in unidecode(experience.position.lower()) or experience.description and unidecode(self.SR) in unidecode(experience.description.lower()):
+            if unidecode(self.SR) in unidecode(experience.position.lower()) or experience.description and unidecode(
+                    self.SR) in unidecode(experience.description.lower()):
                 if score_dict[self.LEVEL][self.SR]["score"] == 0:
                     score_dict[self.LEVEL][self.SR]["score"] += max_score
                     return True
-            elif self.PL in unidecode(experience.position.lower()) or experience.description and self.PL in unidecode(experience.description.lower()):
+            elif self.PL in unidecode(experience.position.lower()) or experience.description and self.PL in unidecode(
+                    experience.description.lower()):
                 if score_dict[self.LEVEL][self.SR]["score"] == 0:
                     score_dict[self.LEVEL][self.PL]["score"] += 7
                     return True
-            elif unidecode(self.JR) in unidecode(experience.position.lower()) or experience.description and unidecode(self.JR) in unidecode(experience.description.lower()):
+            elif unidecode(self.JR) in unidecode(experience.position.lower()) or experience.description and unidecode(
+                    self.JR) in unidecode(experience.description.lower()):
                 if score_dict[self.LEVEL][self.SR]["score"] == 0:
                     score_dict[self.LEVEL][self.JR]["score"] += 3
                     return True
@@ -949,7 +959,8 @@ class ScoreProfile:
                 elif self.__post_graduate_degree(
                         education.level.lower()) or key_max_value == self.POS_GRADUACAO and max_value >= self.MAX_PERCENT:
                     score_dict[self.EDUCATION][self.LEVEL_EDUCATION]['score'] += 8
-                    score_dict[self.EDUCATION][self.LEVEL_EDUCATION]['level'] = f"{self.POS.title()}/{self.ESPECIALIZACAO.title()}"
+                    score_dict[self.EDUCATION][self.LEVEL_EDUCATION][
+                        'level'] = f"{self.POS.title()}/{self.ESPECIALIZACAO.title()}"
                     LEVEL = f"{self.POS} ou {self.ESPECIALIZACAO}"
                     score_dict[self.EDUCATION][LEVEL] = score_dict[self.EDUCATION][self.LEVEL_EDUCATION]
                     del score_dict[self.EDUCATION][self.LEVEL_EDUCATION]

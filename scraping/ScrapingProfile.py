@@ -62,8 +62,8 @@ class ScrapingProfile:
                 else:
                     count_person += 1
                     print(text_count_scraping_profile_exist.format(count_person, count_search, bcolors.BOLD,
-                                                                  person[0].name, bcolors.ENDC, bcolors.WARNING,
-                                                                  bcolors.ENDC))
+                                                                   person[0].name, bcolors.ENDC, bcolors.WARNING,
+                                                                   bcolors.ENDC))
                     SearchDao(self.database).update_search_person_id(person[0].id, search.id)
         else:
             print(text_scraping_profile_warning)
@@ -114,9 +114,11 @@ class ScrapingProfile:
         """
         try:
             experience_section = driver.find_element_by_id('experience-section')
-            list_all_see_more_experience = experience_section.find_elements_by_class_name('pv-profile-section__see-more-inline')
+            list_all_see_more_experience = experience_section.find_elements_by_class_name(
+                'pv-profile-section__see-more-inline')
             self.__click_list(driver, list_all_see_more_experience, experience_section)
-            list_item_see_more_experience = experience_section.find_elements_by_class_name('inline-show-more-text__button')
+            list_item_see_more_experience = experience_section.find_elements_by_class_name(
+                'inline-show-more-text__button')
             self.__click_list(driver, list_item_see_more_experience, experience_section)
         except NoSuchElementException as e:
             log_erro(e)
@@ -127,7 +129,8 @@ class ScrapingProfile:
         """
         try:
             certifications_section = driver.find_element_by_id('certifications-section')
-            list_all_see_more_certifications = certifications_section.find_elements_by_class_name('pv-profile-section__see-more-inline')
+            list_all_see_more_certifications = certifications_section.find_elements_by_class_name(
+                'pv-profile-section__see-more-inline')
             self.__click_list(driver, list_all_see_more_certifications, certifications_section)
         except NoSuchElementException as e:
             log_erro(e)
@@ -206,13 +209,15 @@ class ScrapingProfile:
         Pega os dados de informações principais do perfil.
         """
         container_main = soup.find('section', {'class': ['pv-top-card']})
-        name = container_main.find('h1', {'class': ['text-heading-xlarge']}).text.strip()
-        subtitle = container_main.find('div', {'class': ['text-body-medium']}).text.strip()
-        local = container_main.find('span',
-                                    {'class': ['text-body-small inline t-black--light break-words']}).text.strip()
+
+        name = self.__getText(container_main, 'h1', 'class', 'text-heading-xlarge')
+        subtitle = self.__getText(container_main, 'div', 'class', 'text-body-medium')
+        local = self.__getText(container_main, 'span', 'class', 'text-body-small inline t-black--light break-words')
+
         about = self.__get_about(soup)
         phone, email = self.__get_contact(driver, url_profile)
-        return Person(name=name, subtitle=subtitle, local=local, about=about, phone_number=phone, email=email, url=url_profile)
+        return Person(name=name, subtitle=subtitle, local=local, about=about, phone_number=phone, email=email,
+                      url=url_profile)
 
     def __get_contact(self, driver, url_profile):
         """
@@ -229,9 +234,9 @@ class ScrapingProfile:
         sections = soup_contact.findAll('section', {'class': ['pv-contact-info__contact-type']})
         for item in sections:
             if "ci-email" in item.attrs.get("class"):
-                email = item.find('a', {'class': ['pv-contact-info__contact-link']}).text.strip()
+                email = self.__getText(item, 'a', 'class', 'pv-contact-info__contact-link')
             if "ci-phone" in item.attrs.get("class"):
-                phone = item.find('span', {'class': ['t-14 t-black t-normal']}).text.strip()
+                phone = self.__getText(item, 'span', 'class', 't-14 t-black t-normal')
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
         return phone, email
@@ -269,7 +274,8 @@ class ScrapingProfile:
         career = li.findAll('li', {'class': ['pv-entity__position-group-role-item']})
 
         if career:
-            empresa_list, descricao_list = self.__get_data_description_career_experience(descricao_list, empresa_list, li, career)
+            empresa_list, descricao_list = self.__get_data_description_career_experience(descricao_list, empresa_list,
+                                                                                         li, career)
         else:
             empresa_list, descricao_list = self.__get_data_description_experience(descricao_list, empresa_list, li)
         tempo_list = self.__get_data_time_experience(li, tempo_list)
@@ -362,7 +368,7 @@ class ScrapingProfile:
         if container_certifications:
             children = container_certifications.findAll('li', {'class': ['pv-certification-entity']})
             for li in children:
-                title = li.find('h3', {'class': ['t-16 t-bold']}).text.strip()
+                title = self.__getText(li, 'h3', 'class', 't-16 t-bold')
                 certifications.append(Certification(title))
         return certifications
 
@@ -375,15 +381,15 @@ class ScrapingProfile:
         if container_education:
             children = container_education.findAll('li', {'class': ['pv-education-entity']})
             for li in children:
-                college = li.find('h3', {'class': ['pv-entity__school-name']}).text.strip()
+                college = self.__getText(li, 'h3', 'class', 'pv-entity__school-name')
                 level = None
                 container_level = li.find('p', {'class': ['pv-entity__degree-name']})
                 if container_level:
-                    level = container_level.find('span', {'class': ['pv-entity__comma-item']}).text.strip()
+                    level = self.__getText(container_level, 'span', 'class', 'pv-entity__comma-item')
                 course = None
                 container_course = li.find('p', {'class': ['pv-entity__fos']})
                 if container_course:
-                    course = container_course.find('span', {'class': ['pv-entity__comma-item']}).text.strip()
+                    course = self.__getText(container_course, 'span', 'class', 'pv-entity__comma-item')
                 education_list.append(Education(college=college, level=level, course=course))
         return education_list
 
@@ -417,7 +423,7 @@ class ScrapingProfile:
                 for ol in item:
                     list_li = ol.findAll('li', {'class': ['pv-skill-category-entity']})
                     for li in list_li:
-                        titulo = li.find('span', {'class': ['pv-skill-category-entity__name-text']}).text.strip()
+                        titulo = self.__getText(item, 'span', 'class', 'pv-skill-category-entity__name-text')
                         indications = li.find('span', {'class': ['pv-skill-category-entity__endorsement-count']})
                         if indications:
                             if indications.text.strip() == '+ de 99':
@@ -429,3 +435,12 @@ class ScrapingProfile:
                         verify = True if li.find('div', {'class': ['pv-skill-entity__verified-icon']}) else False
                         skills.append(Skill(titulo, indications, verify))
         return skills
+
+    def __getText(self, item, first_tag, second_tag, class_or_id):
+        try:
+            if item.find(first_tag, {second_tag: [class_or_id]}):
+                return item.find(first_tag, {second_tag: [class_or_id]}).text.strip()
+            return None
+        except Exception as e:
+            log_erro(e)
+            return None
