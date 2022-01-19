@@ -91,11 +91,14 @@ class ScrapingProfile:
         """
         Abre todas as seções do perfil do Linkedin.
         """
-        self.__get_open_about(driver)
-        self.__get_open_experience(driver)
-        self.__get_open_certifications(driver)
-        self.__get_open_accomplishments(driver)
-        self.__get_open_skill(driver)
+        try:
+            self.__get_open_about(driver)
+            self.__get_open_experience(driver)
+            self.__get_open_certifications(driver)
+            self.__get_open_accomplishments(driver)
+            self.__get_open_skill(driver)
+        except Exception as e:
+            log_erro(e)
 
     def __get_open_about(self, driver):
         """
@@ -189,20 +192,23 @@ class ScrapingProfile:
         """
         Pega todos os dados do perfil.
         """
-        html_page = driver.page_source
-        soup = BeautifulSoup(html_page, 'html.parser')
-        person = self.__get_main_info(driver, soup, url_profile)
-        experiences = self.__get_experiences(soup)
-        certifications = self.__get_certifications(soup)
-        education = self.__get_education(soup)
-        languages = self.__get_languages(soup)
-        skills = self.__get_skills(soup)
-        person.experiences = experiences
-        person.certifications = certifications
-        person.education = education
-        person.languages = languages
-        person.skills = skills
-        return person
+        try:
+            html_page = driver.page_source
+            soup = BeautifulSoup(html_page, 'html.parser')
+            person = self.__get_main_info(driver, soup, url_profile)
+            experiences = self.__get_experiences(soup)
+            certifications = self.__get_certifications(soup)
+            education = self.__get_education(soup)
+            languages = self.__get_languages(soup)
+            skills = self.__get_skills(soup)
+            person.experiences = experiences
+            person.certifications = certifications
+            person.education = education
+            person.languages = languages
+            person.skills = skills
+            return person
+        except Exception as e:
+            log_erro(e)
 
     def __get_main_info(self, driver, soup, url_profile):
         """

@@ -319,17 +319,22 @@ def __config():
 
 
 def __reset(driver):
-    option = input(text_reset)
-    if option.lower() == 'y':
-        database.connection.close()
-        path_parent = "scrapingLinkedinProfiles"
-        path_absolute = Path("/")
-        directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
-        shutil.rmtree(directory_main)
-    elif option.lower() == 'n':
-        __choose(driver)
-    else:
-        print(text_login_error)
+    try:
+        option = input(text_reset)
+        if option.lower() == 'y':
+            database.connection.close()
+            path_parent = "scrapingLinkedinProfiles"
+            path_absolute = Path("/")
+            directory_main = os.path.join(path_absolute.parent.absolute(), path_parent)
+            shutil.rmtree(directory_main)
+        elif option.lower() == 'n':
+            __choose(driver)
+        else:
+            print(text_login_error)
+            __reset(driver)
+    except PermissionError as e:
+        log_erro(e)
+        print(text_reset_error)
         __reset(driver)
 
 

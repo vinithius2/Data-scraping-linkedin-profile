@@ -285,6 +285,14 @@ text_login_error = f"""\n
     {bcolors.ENDC}
     """
 
+text_reset_error = f"""\n
+    {bcolors.FAIL}
+    {bcolors.HEADER}######### ATTEMTION ##########{bcolors.ENDC}
+    Close EXCEL or file ERROR LOG
+    {bcolors.HEADER}##############################{bcolors.ENDC}\n
+    {bcolors.ENDC}
+    """
+
 text_login_its_a_trap = f"""\n
     {bcolors.FAIL}
     {bcolors.HEADER}######################## ATTEMTION ########################{bcolors.ENDC}

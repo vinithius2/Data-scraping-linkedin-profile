@@ -17,6 +17,7 @@ from unidecode import unidecode
 from database.dao.PersonDao import PersonDao
 from database.dao.SearchDao import SearchDao
 from utils.bcolors import bcolors
+from utils.log_erro import log_erro
 from utils.texts import text_error, text_waiting_export_xls, text_export_finished, text_weighted_calculation_performed, \
     text_menu_score, text_menu_score_all, text_menu_score_header, text_menu_score_header_end, text_menu_score_option
 from utils.texts import text_error_filter_only_menu
@@ -106,6 +107,7 @@ class ScoreProfile:
             self.__export(result)
             print(text_weighted_calculation_performed.format(bcolors.GREEN, bcolors.ENDC))
         except ValueError as e:
+            log_erro(e)
             print(text_error_score)
             self.start()
 
@@ -229,37 +231,44 @@ class ScoreProfile:
                     cell.border = border
                 elif key == self.TECHNOLOGIES:
                     if columns[self.TECHNOLOGIES]:
-                        for key in self.job_characteristics[self.TECHNOLOGIES]:
-                            tech_dict = columns[self.TECHNOLOGIES][key]
-                            cell_number, tempo = self.__set_cell_tempo(sheet, tech_dict, row_number, cell_number,
-                                                                       alignment, border)
-                            columns_export_size = self.__set_max_size_col(
-                                columns_export_size,
-                                f"{unidecode(key.lower())}_{unidecode(self.tech_items[0].lower())}",
-                                tempo
-                            )
-                            cell_number, status_certification = self.__set_cell_certification(sheet, tech_dict,
-                                                                                              row_number, cell_number,
-                                                                                              alignment, border)
-                            columns_export_size = self.__set_max_size_col(
-                                columns_export_size,
-                                f"{unidecode(key.lower())}_{unidecode(self.tech_items[1].lower())}",
-                                status_certification
-                            )
-                            cell_number, status_verify = self.__set_cell_verify(sheet, tech_dict, row_number,
-                                                                                cell_number, alignment, border)
-                            columns_export_size = self.__set_max_size_col(
-                                columns_export_size,
-                                f"{unidecode(key.lower())}_{unidecode(self.tech_items[2].lower())}",
-                                status_verify
-                            )
-                            cell_number, indications = self.__set_cell_indications(sheet, tech_dict, row_number,
-                                                                                   cell_number, alignment, border)
-                            columns_export_size = self.__set_max_size_col(
-                                columns_export_size,
-                                f"{unidecode(key.lower())}_{unidecode(self.tech_items[3].lower())}",
-                                indications
-                            )
+                        try:
+                            for key in self.job_characteristics[self.TECHNOLOGIES]:
+                                if key and self.tech_items:
+                                    tech_dict = columns[self.TECHNOLOGIES][key]
+                                    cell_number, tempo = self.__set_cell_tempo(sheet, tech_dict, row_number,
+                                                                               cell_number,
+                                                                               alignment, border)
+                                    columns_export_size = self.__set_max_size_col(
+                                        columns_export_size,
+                                        f"{unidecode(key.lower())}_{unidecode(self.tech_items[0].lower())}",
+                                        tempo
+                                    )
+                                    cell_number, status_certification = self.__set_cell_certification(sheet, tech_dict,
+                                                                                                      row_number,
+                                                                                                      cell_number,
+                                                                                                      alignment, border)
+                                    columns_export_size = self.__set_max_size_col(
+                                        columns_export_size,
+                                        f"{unidecode(key.lower())}_{unidecode(self.tech_items[1].lower())}",
+                                        status_certification
+                                    )
+                                    cell_number, status_verify = self.__set_cell_verify(sheet, tech_dict, row_number,
+                                                                                        cell_number, alignment, border)
+                                    columns_export_size = self.__set_max_size_col(
+                                        columns_export_size,
+                                        f"{unidecode(key.lower())}_{unidecode(self.tech_items[2].lower())}",
+                                        status_verify
+                                    )
+                                    cell_number, indications = self.__set_cell_indications(sheet, tech_dict, row_number,
+                                                                                           cell_number, alignment,
+                                                                                           border)
+                                    columns_export_size = self.__set_max_size_col(
+                                        columns_export_size,
+                                        f"{unidecode(key.lower())}_{unidecode(self.tech_items[3].lower())}",
+                                        indications
+                                    )
+                        except Exception as e:
+                            log_erro(e)
                 else:
                     columns_export_size = self.__set_max_size_col(columns_export_size, key, value)
                     cell = sheet.cell(row=row_number, column=cell_number, value=value)
@@ -287,8 +296,9 @@ class ScoreProfile:
             columns_export_size = self.__set_max_size_col(columns_export_size, value[1], value[0])
         for tech in self.job_characteristics["technologies"]:
             for value in self.tech_items:
-                key = f"{unidecode(tech.lower())}_{unidecode(value.lower())}"
-                columns_export_size = self.__set_max_size_col(columns_export_size, key, value)
+                if tech and value:
+                    key = f"{unidecode(tech.lower())}_{unidecode(value.lower())}"
+                    columns_export_size = self.__set_max_size_col(columns_export_size, key, value)
         return columns_export_size
 
     def __set_max_size_col(self, columns_export_size, key, value, size_cell=4):
@@ -765,7 +775,7 @@ class ScoreProfile:
         """
         max_score = 2
         for key, score in score_dict[main_key].items():
-            if key in person.subtitle.lower():
+            if person.subtitle and key in person.subtitle.lower():
                 score_dict[main_key][key]['score'] += max_score
         return score_dict, max_score
 
@@ -786,7 +796,7 @@ class ScoreProfile:
         for key, score in score_dict[main_key].items():
             for experience_list in person.experiences:
                 for experience in experience_list:
-                    if key in experience.position.lower() or experience.description and key in experience.description.lower():
+                    if experience.position and key in experience.position.lower() or experience.description and key in experience.description.lower():
                         tempo = self.__calculate_time(experience.years, experience.months)
                         score_dict[main_key][key]['tempo'] += tempo
         return score_dict
@@ -849,7 +859,7 @@ class ScoreProfile:
         max_score = 5
         for key, score in score_dict[main_key].items():
             for certification in person.certifications:
-                if key in certification.title.lower():
+                if certification.title and key in certification.title.lower():
                     score_dict[main_key][key]['score'] += max_score
                     score_dict[main_key][key]['certification'] = True
                     break
@@ -862,7 +872,7 @@ class ScoreProfile:
         max_score = 10
         for key, score in score_dict[main_key].items():
             for skill in person.skills:
-                if key in skill.title.lower():
+                if skill.title and key in skill.title.lower():
                     if skill.verify:
                         score_dict[main_key][key]['score'] += max_score
                         score_dict[main_key][key]['verify'] = skill.verify
@@ -895,7 +905,7 @@ class ScoreProfile:
         max_score = 10
         for key, score in score_dict[main_key].items():
             for language in person.languages:
-                if key in language.language.lower():
+                if language.language and key in language.language.lower():
                     if language.level:
                         level = language.level.lower().replace("nível", "").strip()
                         if level == self.FLUENTE_OU_NATIVO:
