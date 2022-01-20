@@ -214,16 +214,21 @@ class ScrapingProfile:
         """
         Pega os dados de informações principais do perfil.
         """
-        container_main = soup.find('section', {'class': ['pv-top-card']})
-
-        name = self.__getText(container_main, 'h1', 'class', 'text-heading-xlarge')
-        subtitle = self.__getText(container_main, 'div', 'class', 'text-body-medium')
-        local = self.__getText(container_main, 'span', 'class', 'text-body-small inline t-black--light break-words')
-
-        about = self.__get_about(soup)
-        phone, email = self.__get_contact(driver, url_profile)
-        return Person(name=name, subtitle=subtitle, local=local, about=about, phone_number=phone, email=email,
-                      url=url_profile)
+        person = Person()
+        try:
+            container_main = soup.find('section', {'class': ['pv-top-card']})
+            person.name = self.__getText(container_main, 'h1', 'class', 'text-heading-xlarge')
+            person.subtitle = self.__getText(container_main, 'div', 'class', 'text-body-medium')
+            person.local = self.__getText(container_main, 'span', 'class', 'text-body-small inline t-black--light break-words')
+            person.about = self.__get_about(soup)
+            phone, email = self.__get_contact(driver, url_profile)
+            person.phone = phone
+            person.email = email
+            person.url = url_profile
+            return person
+        except Exception as e:
+            log_erro(e)
+            return person
 
     def __get_contact(self, driver, url_profile):
         """
@@ -260,13 +265,17 @@ class ScrapingProfile:
         """
         Pega todos os dados de experiência do perfil.
         """
-        experiences = list()
-        container_experience = soup.find('section', {'class': ['experience-section']})
-        if container_experience:
-            children = container_experience.findAll('li', {'class': ['pv-entity__position-group-pager']})
-            for li in children:
-                experiences.append(self.__get_data_experience(li))
-        return experiences
+        try:
+            experiences = list()
+            container_experience = soup.find('section', {'class': ['experience-section']})
+            if container_experience:
+                children = container_experience.findAll('li', {'class': ['pv-entity__position-group-pager']})
+                for li in children:
+                    experiences.append(self.__get_data_experience(li))
+            return experiences
+        except Exception as e:
+            log_erro(e)
+            return list()
 
     def __get_data_experience(self, li):
         """
@@ -369,78 +378,94 @@ class ScrapingProfile:
         """
         Pega as certificações.
         """
-        certifications = list()
-        container_certifications = soup.find('section', {'id': ['certifications-section']})
-        if container_certifications:
-            children = container_certifications.findAll('li', {'class': ['pv-certification-entity']})
-            for li in children:
-                title = self.__getText(li, 'h3', 'class', 't-16 t-bold')
-                certifications.append(Certification(title))
-        return certifications
+        try:
+            certifications = list()
+            container_certifications = soup.find('section', {'id': ['certifications-section']})
+            if container_certifications:
+                children = container_certifications.findAll('li', {'class': ['pv-certification-entity']})
+                for li in children:
+                    title = self.__getText(li, 'h3', 'class', 't-16 t-bold')
+                    certifications.append(Certification(title))
+            return certifications
+        except Exception as e:
+            log_erro(e)
+            return list()
 
     def __get_education(self, soup):
         """
         Pega dados de escolaridade.
         """
-        education_list = list()
-        container_education = soup.find('section', {'id': ['education-section']})
-        if container_education:
-            children = container_education.findAll('li', {'class': ['pv-education-entity']})
-            for li in children:
-                college = self.__getText(li, 'h3', 'class', 'pv-entity__school-name')
-                level = None
-                container_level = li.find('p', {'class': ['pv-entity__degree-name']})
-                if container_level:
-                    level = self.__getText(container_level, 'span', 'class', 'pv-entity__comma-item')
-                course = None
-                container_course = li.find('p', {'class': ['pv-entity__fos']})
-                if container_course:
-                    course = self.__getText(container_course, 'span', 'class', 'pv-entity__comma-item')
-                education_list.append(Education(college=college, level=level, course=course))
-        return education_list
+        try:
+            education_list = list()
+            container_education = soup.find('section', {'id': ['education-section']})
+            if container_education:
+                children = container_education.findAll('li', {'class': ['pv-education-entity']})
+                for li in children:
+                    college = self.__getText(li, 'h3', 'class', 'pv-entity__school-name')
+                    level = None
+                    container_level = li.find('p', {'class': ['pv-entity__degree-name']})
+                    if container_level:
+                        level = self.__getText(container_level, 'span', 'class', 'pv-entity__comma-item')
+                    course = None
+                    container_course = li.find('p', {'class': ['pv-entity__fos']})
+                    if container_course:
+                        course = self.__getText(container_course, 'span', 'class', 'pv-entity__comma-item')
+                    education_list.append(Education(college=college, level=level, course=course))
+            return education_list
+        except Exception as e:
+            log_erro(e)
+            return list()
 
     def __get_languages(self, soup):
         """
         Pega dados de idiomas e nível.
         """
-        languages = list()
-        container_accomplishments = soup.find('div', {'id': ['languages-expandable-content']})
-        if container_accomplishments:
-            list_accomplishments = container_accomplishments.findAll('li', {'class': ['pv-accomplishment-entity']})
-            for li in list_accomplishments:
-                idioma = li.find('h4', {'class': ['pv-accomplishment-entity__title']}).contents[2].strip()
-                nivel = li.find('p', {'class': ['pv-accomplishment-entity__proficiency']})
-                nivel = nivel.text.strip() if nivel else None
-                languages.append(Language(idioma, nivel))
-        return languages
+        try:
+            languages = list()
+            container_accomplishments = soup.find('div', {'id': ['languages-expandable-content']})
+            if container_accomplishments:
+                list_accomplishments = container_accomplishments.findAll('li', {'class': ['pv-accomplishment-entity']})
+                for li in list_accomplishments:
+                    idioma = li.find('h4', {'class': ['pv-accomplishment-entity__title']}).contents[2].strip()
+                    nivel = li.find('p', {'class': ['pv-accomplishment-entity__proficiency']})
+                    nivel = nivel.text.strip() if nivel else None
+                    languages.append(Language(idioma, nivel))
+            return languages
+        except Exception as e:
+            log_erro(e)
+            return list()
 
     def __get_skills(self, soup):
         """
         Pega dados de habilidades com idicações e selo do Linkedin.
         """
-        skills = list()
-        container_skill = soup.find('section', {'class': ['pv-skill-categories-section']})
-        if container_skill:
-            container_top_list_skill = container_skill.findAll('ol',
-                                                               {'class': ['pv-skill-categories-section__top-skills']})
-            container_list_skill = container_skill.findAll('ol', {'class': ['pv-skill-category-list__skills_list']})
-            all_list_skill = [container_top_list_skill, container_list_skill]
-            for item in all_list_skill:
-                for ol in item:
-                    list_li = ol.findAll('li', {'class': ['pv-skill-category-entity']})
-                    for li in list_li:
-                        titulo = self.__getText(item, 'span', 'class', 'pv-skill-category-entity__name-text')
-                        indications = li.find('span', {'class': ['pv-skill-category-entity__endorsement-count']})
-                        if indications:
-                            if indications.text.strip() == '+ de 99':
-                                indications = 99
+        try:
+            skills = list()
+            container_skill = soup.find('section', {'class': ['pv-skill-categories-section']})
+            if container_skill:
+                container_top_list_skill = container_skill.findAll('ol',
+                                                                   {'class': ['pv-skill-categories-section__top-skills']})
+                container_list_skill = container_skill.findAll('ol', {'class': ['pv-skill-category-list__skills_list']})
+                all_list_skill = [container_top_list_skill, container_list_skill]
+                for item in all_list_skill:
+                    for ol in item:
+                        list_li = ol.findAll('li', {'class': ['pv-skill-category-entity']})
+                        for li in list_li:
+                            titulo = self.__getText(item, 'span', 'class', 'pv-skill-category-entity__name-text')
+                            indications = li.find('span', {'class': ['pv-skill-category-entity__endorsement-count']})
+                            if indications:
+                                if indications.text.strip() == '+ de 99':
+                                    indications = 99
+                                else:
+                                    indications = int(indications.text.strip())
                             else:
-                                indications = int(indications.text.strip())
-                        else:
-                            indications = 0
-                        verify = True if li.find('div', {'class': ['pv-skill-entity__verified-icon']}) else False
-                        skills.append(Skill(titulo, indications, verify))
-        return skills
+                                indications = 0
+                            verify = True if li.find('div', {'class': ['pv-skill-entity__verified-icon']}) else False
+                            skills.append(Skill(titulo, indications, verify))
+            return skills
+        except Exception as e:
+            log_erro(e)
+            return list()
 
     def __getText(self, item, first_tag, second_tag, class_or_id):
         try:

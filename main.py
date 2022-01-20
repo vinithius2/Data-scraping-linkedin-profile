@@ -74,8 +74,11 @@ def main():
         print(text_connect_error)
         database.cryptography()
     except Exception as e:
-        log_erro(e)
         print(text_unknown_error)
+        print(f"{bcolors.HEADER}######## LOG ########{bcolors.ENDC}")
+        print(e)
+        print(f"{bcolors.HEADER}#####################{bcolors.ENDC}")
+        log_erro(e)
         database.cryptography()
 
 
@@ -179,6 +182,9 @@ def __choose(driver):
         __choose(driver)
     except AttributeError as e:
         print(text_unknown_error)
+        print(f"{bcolors.HEADER}######## LOG ########{bcolors.ENDC}")
+        print(e)
+        print(f"{bcolors.HEADER}#####################{bcolors.ENDC}")
         log_erro(e)
         __choose(driver)
 
@@ -277,9 +283,14 @@ def __profile(driver):
         ScrapingProfile(driver, database).start()
     except InvalidArgumentException as e:
         print(text_unknown_error)
+        print(f"{bcolors.HEADER}######## LOG ########{bcolors.ENDC}")
+        print(e)
+        print(f"{bcolors.HEADER}#####################{bcolors.ENDC}")
+        log_erro(e)
         __choose(driver)
     except TimeoutError as e:
-        print(text_unknown_error)
+        log_erro(e)
+        print(text_time_out_error)
         __choose(driver)
 
 
@@ -296,7 +307,7 @@ def __search(driver):
             print(e)
             __choose(driver)
         except TimeoutError as e:
-            print(text_unknown_error)
+            print(text_time_out_error)
             __choose(driver)
     else:
         print(text_login_url_base)

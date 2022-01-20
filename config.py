@@ -13,4 +13,4 @@ CLOSE_APP = 6
 RESET_APP = 7
 # Config
 DEBUG = False
-VERSION = 1.2
+VERSION = 1.3
