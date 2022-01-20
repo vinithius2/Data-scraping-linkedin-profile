@@ -469,7 +469,7 @@ class ScrapingProfile:
 
     def __getText(self, item, first_tag, second_tag, class_or_id):
         try:
-            if item.find(first_tag, {second_tag: [class_or_id]}):
+            if item and item.find(first_tag, {second_tag: [class_or_id]}):
                 return item.find(first_tag, {second_tag: [class_or_id]}).text.strip()
             return None
         except Exception as e:
